@@ -1,15 +1,37 @@
 {
   "name": "node-red-contrib-anker-solix",
-  "version": "1.0.0",
-  "description": "Anker SOLIX OpenCCU All-in-One Baustein",
+  "version": "1.0.6",
+  "description": "Anker SOLIX OpenCCU All-in-One Baustein für Power Dock und bis zu 4 Solarbanks inklusive MQTT-Wakeup und Statistik-Abfrage",
   "main": "anker-solix.js",
   "keywords": [
     "node-red",
     "anker",
     "solix",
+    "anker-solix",
+    "solarbank",
+    "powerdock",
+    "balkonkraftwerk",
+    "solar",
+    "photovoltaik",
+    "pv",
     "homematic",
-    "openccu"
+    "openccu",
+    "redmatic",
+    "raspberrymatic",
+    "ccu",
+    "ccu3",
+    "smart-home",
+    "energy",
+    "mqtt"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com"
+  },
+  "bugs": {
+    "url": "https://github.com"
+  },
+  "homepage": "https://github.com",
   "license": "MIT",
   "dependencies": {
     "mqtt": "^5.0.0"
