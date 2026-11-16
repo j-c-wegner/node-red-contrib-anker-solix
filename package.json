@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-anker-solix",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Anker SOLIX OpenCCU All-in-One Baustein für Power Dock und bis zu 4 Solarbanks inklusive MQTT-Wakeup und Statistik-Abfrage",
   "main": "anker-solix.js",
   "keywords": [
@@ -26,12 +26,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/j-c-wegner/node-red-contrib-anker-solix.git"
+    "url": "https://github.com/j-c-wegner/node-red-contrib-anker-solix.git",
   },
   "bugs": {
-    "url": "https://github.com/j-c-wegner/node-red-contrib-anker-solix/issues"
+    "url": "https://github.com/j-c-wegner/node-red-contrib-anker-solix/issues",
   },
-  "homepage": "https://github.com/j-c-wegner/node-red-contrib-anker-solix#readme"
+  "homepage": "https://github.com/j-c-wegner/node-red-contrib-anker-solix#readme",
   "license": "MIT",
   "engines": { "node": ">=16.0.0" },
   "dependencies": {
