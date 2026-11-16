@@ -33,6 +33,7 @@
   },
   "homepage": "https://github.com",
   "license": "MIT",
+  "engines": { "node": ">=16.0.0" },
   "dependencies": {
     "mqtt": "^5.0.0"
   },
