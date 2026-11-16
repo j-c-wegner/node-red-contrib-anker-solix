@@ -1,1 +1,138 @@
+[
+    {
+        "id": "b1a2c3d4e5f60001",
+        "type": "tab",
+        "label": "Anker SOLIX OpenCCU Beispiel",
+        "disabled": false,
+        "info": "Beispiel-Flow für den All-in-One Baustein Anker SOLIX OpenCCU (V1.0.6).\n\n1. Trage im blauen Anker-Baustein deine E-Mail, dein Passwort und deine OpenCCU-Systemvariablen ein.\n2. Verbinde Ausgang 1 mit deinem blauen OpenCCU-SysVar-Node (Feld Variable/Name leer lassen!).\n3. Nutze den zweiten Inject-Node (get_sites), um alle Anlagen und SITE_IDs in deinem Konto anzuzeigen."
+    },
+    {
+        "id": "b1a2c3d4e5f60002",
+        "type": "inject",
+        "z": "b1a2c3d4e5f60001",
+        "name": "Alle 5 Sekunden abrufen",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "5",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "2",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 190,
+        "y": 140,
+        "wires": [
+            [
+                "b1a2c3d4e5f60004"
+            ]
+        ]
+    },
+    {
+        "id": "b1a2c3d4e5f60003",
+        "type": "inject",
+        "z": "b1a2c3d4e5f60001",
+        "name": "SITE_IDs abrufen (get_sites)",
+        "props": [
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "get_sites",
+        "x": 200,
+        "y": 220,
+        "wires": [
+            [
+                "b1a2c3d4e5f60004"
+            ]
+        ]
+    },
+    {
+        "id": "b1a2c3d4e5f60004",
+        "type": "anker-solix",
+        "z": "b1a2c3d4e5f60001",
+        "name": "Anker SOLIX OpenCCU",
+        "email": "",
+        "siteId": "",
+        "powerdockSn": "",
+        "powerdockPn": "",
+        "sb1Sn": "",
+        "sb2Sn": "",
+        "sb3Sn": "",
+        "sb4Sn": "",
+        "sysvarsJson": "{\n    \"PD_HAUSLAST\": \"\",\n    \"PD_NETZ_BEZUG\": \"\",\n    \"PD_NETZ_EINSP\": \"\",\n    \"PD_SOC\": \"\",\n    \"PD_SOLAR\": \"\"\n}",
+        "x": 490,
+        "y": 180,
+        "wires": [
+            [
+                "b1a2c3d4e5f60005"
+            ],
+            [
+                "b1a2c3d4e5f60006"
+            ],
+            [
+                "b1a2c3d4e5f60007"
+            ]
+        ]
+    },
+    {
+        "id": "b1a2c3d4e5f60005",
+        "type": "debug",
+        "z": "b1a2c3d4e5f60001",
+        "name": "Ausgang 1: Hier OpenCCU SysVar-Node anschließen!",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 850,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "b1a2c3d4e5f60006",
+        "type": "debug",
+        "z": "b1a2c3d4e5f60001",
+        "name": "Ausgang 2: Cloud Rohdaten",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 780,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "b1a2c3d4e5f60007",
+        "type": "debug",
+        "z": "b1a2c3d4e5f60001",
+        "name": "Ausgang 3: Status & SITE_IDs",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 790,
+        "y": 240,
+        "wires": []
+    }
+]
 
