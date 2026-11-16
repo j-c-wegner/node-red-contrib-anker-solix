@@ -89,7 +89,7 @@ Zeiträume (`<ZEITRAUM>`): `TAG`, `WOCHE`, `MONAT`, `JAHR`
 
 ## Versionshistorie (Changelog)
 
-* **v1.0.6**
+* **v1.0.7**
   * **3 Ausgänge:** Ausgang 1 für gefilterte OpenCCU-Systemvariablen (`rbe`), Ausgang 2 für die kompletten Cloud-Rohdaten (`get_scen_info`), Ausgang 3 für Status- und Debug-Meldungen.
   * **Gezielter `SITE_ID`-Abruf (`get_sites`):** Sendet bei `msg.topic = "get_sites"` sofort alle im Konto verfügbaren Anlagen (`Name` & `SITE_ID`) an Ausgang 3 und das Debug-Fenster.
   * **Solarbank-Fallback für MQTT-Wakeup:** Unterstützt jetzt auch Einzelanlagen ohne Power Dock vollautomatisch mit dem 4-Minuten-Echtzeit-Trigger.
