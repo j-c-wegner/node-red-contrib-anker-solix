@@ -90,6 +90,8 @@ Zeiträume (`<ZEITRAUM>`): `TAG`, `WOCHE`, `MONAT`, `JAHR`
 
 ## Versionshistorie (Changelog)
 
+* **v1.0.12**
+  * Bugfix 
 * **v1.0.11**
   * Screenshots (`flow.png` und `config.png`) sowie detaillierte Hardware-Kompatibilitätsregeln (Power Dock, Solarbank 2/3, Solarbank 4 DIY-Parallelmodus) in der Dokumentation ergänzt.
 * **v1.0.6**
