@@ -7,7 +7,7 @@
             email: { value: "", required: true },
             siteId: { value: "" },
             powerdockSn: { value: "" },
-            powerdockPn: { value: "AE100" },
+            powerdockPn: { value: "" },
             sb1Sn: { value: "" },
             sb2Sn: { value: "" },
             sb3Sn: { value: "" },
@@ -18,8 +18,8 @@
             password: { type: "password" }
         },
         inputs: 1,
-        outputs: 2,
-        outputLabels: ["OpenCCU SysVars", "Status"],
+        outputs: 3,
+        outputLabels: ["OpenCCU SysVars", "Cloud Rohdaten", "Debug / Status"],
         icon: "font-awesome/fa-bolt",
         label: function() {
             return this.name || "Anker SOLIX OpenCCU";
@@ -52,12 +52,12 @@
         <input type="text" id="node-input-siteId" placeholder="Leer lassen für Auto-Erkennung">
     </div>
     <div class="form-row">
-        <label for="node-input-powerdockSn"><i class="fa fa-plug"></i> Power Dock SN</label>
-        <input type="text" id="node-input-powerdockSn" placeholder="Leer lassen für Auto-Erkennung">
+        <label for="node-input-powerdockSn"><i class="fa fa-plug"></i> Wakeup Gerät SN</label>
+        <input type="text" id="node-input-powerdockSn" placeholder="Auto (Power Dock oder Solarbank 1)">
     </div>
     <div class="form-row">
-        <label for="node-input-powerdockPn"><i class="fa fa-barcode"></i> Power Dock PN</label>
-        <input type="text" id="node-input-powerdockPn" placeholder="AE100">
+        <label for="node-input-powerdockPn"><i class="fa fa-barcode"></i> Wakeup Gerät PN</label>
+        <input type="text" id="node-input-powerdockPn" placeholder="Auto (z. B. AE100 oder A17C1)">
     </div>
     <hr>
     <div class="form-row">
@@ -84,23 +84,25 @@
 </script>
 <script type="text/html" data-help-name="anker-solix">
     <h3>Anker SOLIX OpenCCU – All-in-One Baustein</h3>
-    <p>Dieser Baustein verbindet deine <b>Anker SOLIX Anlage</b> (Power Dock + bis zu 4 Solarbanks) direkt mit deinen <b>OpenCCU-Systemvariablen</b> – inklusive automatischem MQTT-Wakeup (alle 4 Minuten) und Cloud-schonender Statistik-Abfrage (Tag, Woche, Monat, Jahr).</p>
+    <p>Dieser Baustein verbindet deine <b>Anker SOLIX Anlage</b> (mit oder ohne Power Dock + bis zu 4 Solarbanks) direkt mit deinen <b>OpenCCU-Systemvariablen</b> – inklusive automatischem MQTT-Wakeup (alle 4 Minuten) und Cloud-schonender Statistik-Abfrage (Tag, Woche, Monat, Jahr).</p>
 
-    <h4>1. Verkabelung im Flow</h4>
+    <h4>1. Verkabelung & Ausgänge</h4>
     <ul>
         <li><b>Eingang:</b> Mit einem <b>Inject-Node</b> verbinden (empfohlenes Intervall: alle <b>5 Sekunden</b>).</li>
+        <li><b>Gezielter Steuerbefehl am Eingang:</b> Wird eine Nachricht mit <code>msg.topic = "get_sites"</code> (oder <code>msg.payload = "get_sites"</code>) gesendet, liest der Baustein sofort alle im Konto verfügbaren Anlagen inkl. Name und <code>SITE_ID</code> aus und gibt sie an Ausgang 3 sowie im Debug-Fenster aus.</li>
         <li><b>Ausgang 1 (OpenCCU SysVars):</b> Direkt mit <b>einem einzigen blauen OpenCCU-SysVar-Node</b> verbinden. Im OpenCCU-Node muss das Feld <b>Variable/Name leer</b> bleiben, da der Variablenname automatisch über <code>msg.topic</code> übergeben wird.</li>
-        <li><b>Ausgang 2 (Status):</b> Optionaler Ausgang für Status- und Debug-Meldungen.</li>
+        <li><b>Ausgang 2 (Cloud Rohdaten):</b> Liefert das vollständige JSON-Antwortobjekt (<code>get_scen_info</code>) der Anker-Cloud zur eigenen Weiterverarbeitung.</li>
+        <li><b>Ausgang 3 (Debug / Status):</b> Gibt Statusmeldungen sowie bei <code>get_sites</code> die Liste aller gefundenen Anlagen aus.</li>
     </ul>
 
     <h4>2. Einrichtung & Konfiguration</h4>
     <ul>
         <li><b>Anker E-Mail & Passwort:</b> Zugangsdaten deines Anker-Hauptkontos eintragen (wird für volle Berechtigungen wie den MQTT-Wakeup und alle Statistikdaten benötigt; geteilte Gast-Accounts haben hier oft Einschränkungen).</li>
-        <li><b>Mehrere Anlagen betreiben:</b> Du kannst den Baustein beliebig oft im Flow platzieren. Die Login-Sitzung (Token) wird pro <b>E-Mail-Adresse</b> getrennt verwaltet – laufen mehrere Anlagen über dasselbe Hauptkonto, teilen sie sich automatisch den Login, ohne sich gegenseitig abzumelden.</li>
-        <li><b>Site ID:</b> Kann bei einer einzelnen Anlage leer bleiben – wird beim ersten Start automatisch aus der Anker-Cloud ermittelt und dauerhaft gespeichert. (Liegen mehrere Anlagen im selben Konto, hier die gewünschte Site ID eintragen.)</li>
-        <li><b>Power Dock SN / PN:</b> Seriennummer und Produktcode (<code>AE100</code>) deines Power Docks für den automatischen 4-Minuten-Wakeup. Kann leer bleiben – wird automatisch aus der Anlage ausgelesen, sobald ein Power Dock erkannt wird.</li>
-        <li><b>Solarbank 1 bis 4 SN:</b> Seriennummern deiner Speicher eintragen. Bleiben die Felder leer, werden bis zu vier vorhandene Solarbanks automatisch erkannt und gespeichert.</li>
-        <li><b>SysVars Zuordnung (JSON):</b> Hinter dem jeweiligen Schlüssel den exakten Namen deiner OpenCCU-Systemvariable eintragen (z. B. <code>"PD_HAUSLAST": "Anker_Hauslast"</code>). Bei mehreren Bausteinen unbedingt unterschiedliche Variablennamen pro Anlage verwenden. Alle Felder, die leer (<code>""</code>) bleiben, werden übersprungen. Ein <code>rbe</code>-Filter (sendet nur bei Wertänderung) ist bereits integriert.</li>
+        <li><b>Mehrere Anlagen betreiben:</b> Du kannst den Baustein beliebig oft im Flow platzieren. Die Login-Sitzung (Token) wird pro <b>E-Mail-Adresse</b> getrennt verwaltet.</li>
+        <li><b>Site ID:</b> Kann bei einer einzelnen Anlage leer bleiben – wird beim ersten Start automatisch ermittelt und gespeichert. Liegen mehrere Anlagen im selben Konto, werden alle <code>SITE_ID</code>s im Debug-Fenster angezeigt (oder per <code>get_sites</code> abgerufen).</li>
+        <li><b>Wakeup Gerät SN / PN:</b> Kann leer bleiben – es wird automatisch das Power Dock (z. B. <code>AE100</code>) oder, falls kein Power Dock vorhanden ist, die erste Solarbank für den 4-Minuten-Echtzeit-Trigger verwendet.</li>
+        <li><b>Solarbank 1 bis 4 SN:</b> Seriennummern deiner Speicher eintragen. Bleiben die Felder leer, werden bis zu vier vorhandene Solarbanks automatisch erkannt.</li>
+        <li><b>SysVars Zuordnung (JSON):</b> Hinter dem jeweiligen Schlüssel den exakten Namen deiner OpenCCU-Systemvariable eintragen (z. B. <code>"PD_HAUSLAST": "Anker_Hauslast"</code>). Alle Felder, die leer (<code>""</code>) bleiben, werden übersprungen. Ein <code>rbe</code>-Filter ist integriert.</li>
     </ul>
 
     <h4>3. Verfügbare Datenpunkte & Einheiten</h4>
@@ -138,11 +140,5 @@
         <li><code>STAT_SBx_&lt;ZEITRAUM&gt;_SOLAR</code>: Solarertrag der jeweiligen Solarbank SB1 bis SB4 (kWh)</li>
         <li><code>STAT_SBx_&lt;ZEITRAUM&gt;_LADEN</code>: Batterie-Ladung der jeweiligen Solarbank SB1 bis SB4 (kWh)</li>
         <li><code>STAT_SBx_&lt;ZEITRAUM&gt;_ENTLADEN</code>: Batterie-Entladung der jeweiligen Solarbank SB1 bis SB4 (kWh)</li>
-    </ul>
-
-    <h4>4. Hinweise für OpenCCU & CCU-Historian</h4>
-    <ul>
-        <li><b>Variablentyp in der OpenCCU:</b> Alle Systemvariablen als <b>Zahl (Gleitkommazahl)</b> anlegen und das Maximum hoch genug wählen (z. B. <code>999999</code> für Jahreswerte).</li>
-        <li><b>CCU-Historian:</b> Statistik-Systemvariablen in der Historian-Datenpunkt-Konfiguration auf <b>Deaktiviert</b> setzen. Für Live-Werte empfiehlt sich in der <code>ccu-historian.config</code> der Wert <code>devices.device1.sysvarCycle=5000</code>.</li>
     </ul>
 </script>
