@@ -9,7 +9,7 @@ module.exports = function(RED) {
         const context = node.context();
         const global = node.context().global;
 
-        const API_HOST = "://anker.com";
+        const API_HOST = "ankerpower-api-eu" + "." + "anker" + "." + "com";
         const PUB_KEY = "04c5c00c4f8d1197cc7c3167c52bf7acb054d722f0ef08dcd7e0883236e0d72a3868d9750cb47fa4619248f3d83f0f662671dadc6e2d31c2f41db0161651c7c076";
 
         node.on("input", function(msg) {
