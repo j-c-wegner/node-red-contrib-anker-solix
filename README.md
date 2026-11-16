@@ -90,7 +90,7 @@ Zeiträume (`<ZEITRAUM>`): `TAG`, `WOCHE`, `MONAT`, `JAHR`
 
 ## Versionshistorie (Changelog)
 
-* **v1.0.8**
+* **v1.0.9**
   * Screenshots (`flow.png` und `config.png`) sowie detaillierte Hardware-Kompatibilitätsregeln (Power Dock, Solarbank 2/3, Solarbank 4 DIY-Parallelmodus) in der Dokumentation ergänzt.
 * **v1.0.6**
   * **3 Ausgänge:** Ausgang 1 für gefilterte OpenCCU-Systemvariablen (`rbe`), Ausgang 2 für die kompletten Cloud-Rohdaten (`get_scen_info`), Ausgang 3 für Status- und Debug-Meldungen.
