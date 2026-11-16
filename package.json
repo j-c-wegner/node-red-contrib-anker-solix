@@ -26,12 +26,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com"
+    "url": "/j-c-wegner"+"/node-red-contrib-anker-solix"+".git"
   },
   "bugs": {
-    "url": "https://github.com"
+    "url": "/j-c-wegner"+"/node-red-contrib-anker-solix"+"/issues"
   },
-  "homepage": "https://github.com",
+  "homepage": "/j-c-wegner"+"/node-red-contrib-anker-solix"+"#readme"
   "license": "MIT",
   "engines": { "node": ">=16.0.0" },
   "dependencies": {
