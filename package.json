@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-anker-solix",
-  "version": "1.0.6",
+  "version": "1.0.8",
   "description": "Anker SOLIX OpenCCU All-in-One Baustein für Power Dock und bis zu 4 Solarbanks inklusive MQTT-Wakeup und Statistik-Abfrage",
   "main": "anker-solix.js",
   "keywords": [
@@ -37,7 +37,13 @@
     "mqtt": "^5.0.0"
   },
   "node-red": {
+    "version": ">=2.0.0",
     "nodes": {
+      "anker-solix": "anker-solix.js"
+    }
+  }
+}
+
       "anker-solix": "anker-solix.js"
     }
   }
