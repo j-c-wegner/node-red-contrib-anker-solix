@@ -7,10 +7,10 @@ Ein All-in-One Node-RED-Baustein zur direkten Einbindung deiner **Anker SOLIX An
 ## Screenshots & Aufbau
 
 ### Flow-Verkabelung
-![Flow Aufbau](images/flow.png)
+![Flow Aufbau](https:// raw . githubusercontent . com / j-c-wegner / node-red-contrib-anker-solix / main / images / flow . png)
 
 ### Konfiguration im Baustein
-![Konfiguration](images/config.png)
+![Flow Aufbau](https:// raw . githubusercontent . com / j-c-wegner / node-red-contrib-anker-solix / main / images / config . png)
 
 ---
 
