@@ -148,236 +148,257 @@ module.exports = function(RED) {
                     return;
                 }
 
-                const cacheKey = "anker_session_" + EMAIL.toLowerCase();
-                let s = global.get(cacheKey) || {};
-
-                if (!s.token || !s.userId || (s.expires && Date.now() > s.expires)) {
-                    const ecdh = crypto.createECDH("prime256v1");
-                    ecdh.generateKeys();
-                    const pubHex = ecdh.getPublicKey("hex");
-                    const shared = ecdh.computeSecret(Buffer.from(PUB_KEY, "hex"));
-                    const key = shared.slice(0, 16);
-                    const cipher = crypto.createCipheriv("aes-128-cbc", key, key);
-                    let enc = cipher.update(PASSWORD, "utf8", "base64");
-                    enc += cipher.final("base64");
-
-                    const loginRes = await req("/passport/login", {
-                        ab: "DE",
-                        client_secret_info: { public_key: pubHex },
-                        enc: 0,
-                        email: EMAIL,
-                        password: enc,
-                        time_zone: 3600000,
-                        transaction: String(Date.now())
-                    });
-
-                    if (!loginRes || loginRes.code !== 0 || !loginRes.data) {
-                        const errMsg = (loginRes && loginRes.msg) ? loginRes.msg : "Login fehlgeschlagen";
-                        node.status({ fill: "red", shape: "dot", text: errMsg });
-                        node.send([null, null, { topic: "error", payload: loginRes }]);
-                        return;
-                    }
-
-                    const d = loginRes.data;
-                    const gAuth = crypto.createHash("md5").update(d.user_id).digest("hex");
-                    s = {
-                        token: d.auth_token,
-                        userId: d.user_id,
-                        gtoken: gAuth,
-                        expires: Date.now() + (20 * 3600 * 1000)
-                    };
-
-                    try {
-                        const certRes = await req("/app/devicemanage/get_user_mqtt_info", {}, {
-                            "X-Auth-Token": s.token,
-                            "gtoken": s.gtoken
-                        });
-                        if (certRes && certRes.code === 0 && certRes.data) {
-                            s.mqttInfo = certRes.data;
-                        }
-                    } catch (e) {}
-
-                    global.set(cacheKey, s);
-                }
-
-                const authHdrs = { "X-Auth-Token": s.token, "gtoken": s.gtoken };
-
-                if (!SITE_ID || isGetSites) {
-                    const siteRes = await req("/power_service/v1/site/get_site_list", {}, authHdrs);
-                    if (!siteRes || siteRes.code !== 0 || !siteRes.data || !siteRes.data.site_list) {
-                        node.status({ fill: "red", shape: "dot", text: "Site-Liste Fehler" });
-                        return;
-                    }
-                    const list = siteRes.data.site_list;
-                    if (isGetSites) {
-                        const summary = list.map(function(item) {
-                            return { Name: item.site_name, SITE_ID: item.site_id, Rolle: item.ms_type };
-                        });
-                        const outTxt = "Anker SOLIX – Gefundene Anlagen: " + JSON.stringify(summary);
-                        node.status({ fill: "blue", shape: "dot", text: list.length + " Anlage(n) gefunden" });
-                        node.send([null, null, { topic: "get_sites", payload: outTxt, sites: summary }]);
-                        return;
-                    }
-                    const ownSite = list.find(function(x) { return x.ms_type === 1; }) || list;
-                    if (ownSite && ownSite.site_id) {
-                        SITE_ID = ownSite.site_id;
-                        context.set("savedSiteId", SITE_ID);
-                    }
-                }
-
-                const scenRes = await req("/power_service/v1/site/get_scen_info", { site_id: SITE_ID }, authHdrs);
-                if (!scenRes || scenRes.code !== 0 || !scenRes.data) {
-                    if (scenRes && (scenRes.code === 401 || scenRes.code === 10003)) {
-                        global.set(cacheKey, null);
-                    }
-                    node.status({ fill: "red", shape: "dot", text: "Abruf-Fehler (" + (scenRes ? scenRes.code : "?") + ")" });
+                if (context.get("isBusy")) {
                     return;
                 }
 
-                const scen = scenRes.data;
-                node.send([null, { topic: "scen_info", payload: scen }, null]);
+                const blockedUntil = context.get("loginBlockedUntil") || 0;
+                if (Date.now() < blockedUntil) {
+                    const waitMin = Math.ceil((blockedUntil - Date.now()) / 60000);
+                    node.status({ fill: "yellow", shape: "ring", text: "Login-Pause (" + waitMin + " Min. Schutz)" });
+                    return;
+                }
 
-                if (!DEVICE_SN || !WAKEUP_MODE) {
-                    const sbList = (scen.solarbank_info && scen.solarbank_info.solarbank_list) ? scen.solarbank_info.solarbank_list : [];
-                    const gridList = (scen.grid_info && scen.grid_info.grid_list) ? scen.grid_info.grid_list : [];
-                    const ppsList = (scen.pps_info && scen.pps_info.pps_list) ? scen.pps_info.pps_list : [];
+                context.set("isBusy", true);
+                try {
+                    const cacheKey = "anker_session_" + EMAIL.toLowerCase();
+                    let s = global.get(cacheKey) || {};
 
-                    let foundDock = null;
-                    if (scen.combiner_box_info && scen.combiner_box_info.combiner_box_list && scen.combiner_box_info.combiner_box_list.length > 0) {
-                        foundDock = scen.combiner_box_info.combiner_box_list;
-                    } else {
-                        foundDock = sbList.find(function(x) { return String(x.device_pn || "").toUpperCase() === "AE100"; }) ||
-                                    ppsList.find(function(x) { return String(x.device_pn || "").toUpperCase() === "AE100"; });
+                    if (!s.token || !s.userId || (s.expires && Date.now() > s.expires)) {
+                        const ecdh = crypto.createECDH("prime256v1");
+                        ecdh.generateKeys();
+                        const pubHex = ecdh.getPublicKey("hex");
+                        const shared = ecdh.computeSecret(Buffer.from(PUB_KEY, "hex"));
+                        const key = shared.slice(0, 16);
+                        const cipher = crypto.createCipheriv("aes-128-cbc", key, key);
+                        let enc = cipher.update(PASSWORD, "utf8", "base64");
+                        enc += cipher.final("base64");
+
+                        const loginRes = await req("/passport/login", {
+                            ab: "DE",
+                            client_secret_info: { public_key: pubHex },
+                            enc: 0,
+                            email: EMAIL,
+                            password: enc,
+                            time_zone: 3600000,
+                            transaction: String(Date.now())
+                        });
+
+                        if (!loginRes || loginRes.code !== 0 || !loginRes.data) {
+                            const errCode = loginRes ? loginRes.code : 0;
+                            const errMsg = (loginRes && loginRes.msg) ? loginRes.msg : "Login fehlgeschlagen";
+                            const pauseMs = (errCode === 10019) ? (11 * 60 * 1000) : (60 * 1000);
+                            context.set("loginBlockedUntil", Date.now() + pauseMs);
+                            node.status({ fill: "red", shape: "dot", text: errMsg });
+                            node.send([null, null, { topic: "error", payload: loginRes }]);
+                            return;
+                        }
+
+                        const d = loginRes.data;
+                        const gAuth = crypto.createHash("md5").update(d.user_id).digest("hex");
+                        s = {
+                            token: d.auth_token,
+                            userId: d.user_id,
+                            gtoken: gAuth,
+                            expires: Date.now() + (20 * 3600 * 1000)
+                        };
+
+                        try {
+                            const certRes = await req("/app/devicemanage/get_user_mqtt_info", {}, {
+                                "X-Auth-Token": s.token,
+                                "gtoken": s.gtoken
+                            });
+                            if (certRes && certRes.code === 0 && certRes.data) {
+                                s.mqttInfo = certRes.data;
+                            }
+                        } catch (e) {}
+
+                        global.set(cacheKey, s);
                     }
 
-                    let foundMeter = gridList.find(isAnkerSmartMeter) ||
-                                     sbList.find(isAnkerSmartMeter) ||
-                                     ppsList.find(isAnkerSmartMeter);
+                    const authHdrs = { "X-Auth-Token": s.token, "gtoken": s.gtoken };
 
-                    const realSbs = sbList.filter(function(x) {
-                        return String(x.device_pn || "").toUpperCase() !== "AE100" && !isAnkerSmartMeter(x);
-                    });
-
-                    if (realSbs.length > 0) {
-                        const detectedSns = realSbs.map(function(x) { return x.device_sn || ""; });
-                        context.set("savedSolarbanks", detectedSns);
-                        for (let i = 0; i < 4; i++) {
-                            if (!SOLARBANKS[i] && detectedSns[i]) { SOLARBANKS[i] = detectedSns[i]; }
+                    if (!SITE_ID || isGetSites) {
+                        const siteRes = await req("/power_service/v1/site/get_site_list", {}, authHdrs);
+                        if (!siteRes || siteRes.code !== 0 || !siteRes.data || !siteRes.data.site_list) {
+                            node.status({ fill: "red", shape: "dot", text: "Site-Liste Fehler" });
+                            return;
+                        }
+                        const list = siteRes.data.site_list;
+                        if (isGetSites) {
+                            const summary = list.map(function(item) {
+                                return { Name: item.site_name, SITE_ID: item.site_id, Rolle: item.ms_type };
+                            });
+                            const outTxt = "Anker SOLIX – Gefundene Anlagen: " + JSON.stringify(summary);
+                            node.status({ fill: "blue", shape: "dot", text: list.length + " Anlage(n) gefunden" });
+                            node.send([null, null, { topic: "get_sites", payload: outTxt, sites: summary }]);
+                            return;
+                        }
+                        const ownSite = list.find(function(x) { return x.ms_type === 1; }) || list[0];
+                        if (ownSite && ownSite.site_id) {
+                            SITE_ID = ownSite.site_id;
+                            context.set("savedSiteId", SITE_ID);
                         }
                     }
 
-                    if (foundDock && foundDock.device_sn) {
-                        DEVICE_SN = foundDock.device_sn;
-                        DEVICE_PN = foundDock.device_pn || "AE100";
-                        WAKEUP_MODE = "PowerDock";
-                    } else if (foundMeter && foundMeter.device_sn) {
-                        DEVICE_SN = foundMeter.device_sn;
-                        DEVICE_PN = foundMeter.device_pn || "SHEM3";
-                        WAKEUP_MODE = "SmartMeter";
-                    } else if (realSbs.length > 0 && realSbs.device_sn) {
-                        DEVICE_SN = realSbs.device_sn;
-                        DEVICE_PN = realSbs.device_pn || "A17C1";
-                        WAKEUP_MODE = "Solarbank";
+                    const scenRes = await req("/power_service/v1/site/get_scen_info", { site_id: SITE_ID }, authHdrs);
+                    if (!scenRes || scenRes.code !== 0 || !scenRes.data) {
+                        if (scenRes && (scenRes.code === 401 || scenRes.code === 10003)) {
+                            global.set(cacheKey, null);
+                            context.set("loginBlockedUntil", Date.now() + (30 * 1000));
+                        }
+                        node.status({ fill: "red", shape: "dot", text: "Abruf-Fehler (" + (scenRes ? scenRes.code : "?") + ")" });
+                        return;
                     }
 
-                    if (DEVICE_SN) {
-                        context.set("savedPowerdockSn", DEVICE_SN);
-                        context.set("savedPowerdockPn", DEVICE_PN);
-                        context.set("savedWakeupMode", WAKEUP_MODE);
-                    }
-                }
-                let wakeupStatus = "OK";
-                const manualOverride = context.get("wakeupOverride");
-                let shouldWakeup = false;
+                    const scen = scenRes.data;
+                    node.send([null, { topic: "scen_info", payload: scen }, null]);
 
-                if (manualOverride !== undefined) {
-                    shouldWakeup = Boolean(manualOverride);
-                } else if (WAKEUP_MODE === "PowerDock" || WAKEUP_MODE === "SmartMeter") {
-                    shouldWakeup = true;
-                } else {
-                    shouldWakeup = false;
-                }
+                    if (!DEVICE_SN || !WAKEUP_MODE) {
+                        const sbList = (scen.solarbank_info && scen.solarbank_info.solarbank_list) ? scen.solarbank_info.solarbank_list : [];
+                        const gridList = (scen.grid_info && scen.grid_info.grid_list) ? scen.grid_info.grid_list : [];
+                        const ppsList = (scen.pps_info && scen.pps_info.pps_list) ? scen.pps_info.pps_list : [];
 
-                if (DEVICE_SN && shouldWakeup) {
-                    wakeupStatus = triggerMqttWakeup(s, DEVICE_SN, DEVICE_PN, WAKEUP_MODE || "Auto");
-                } else if (WAKEUP_MODE === "Solarbank" && !shouldWakeup) {
-                    wakeupStatus = "OK (Akkuschutz: Wakeup aus)";
-                }
+                        let foundDock = null;
+                        if (scen.combiner_box_info && scen.combiner_box_info.combiner_box_list && scen.combiner_box_info.combiner_box_list.length > 0) {
+                            foundDock = scen.combiner_box_info.combiner_box_list[0];
+                        } else {
+                            foundDock = sbList.find(function(x) { return String(x.device_pn || "").toUpperCase() === "AE100"; }) ||
+                                        ppsList.find(function(x) { return String(x.device_pn || "").toUpperCase() === "AE100"; });
+                        }
 
-                const num = function(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
-                const sbInfo = scen.solarbank_info || {};
-                const gridInfo = scen.grid_info || {};
+                        let foundMeter = gridList.find(isAnkerSmartMeter) ||
+                                         sbList.find(isAnkerSmartMeter) ||
+                                         ppsList.find(isAnkerSmartMeter);
 
-                emitSysVar("PD_SOLAR", num(sbInfo.total_photovoltaic_power));
-                emitSysVar("PD_HAUSLAST", num(scen.home_load_power));
-                emitSysVar("PD_AKKU_LEISTUNG", num(sbInfo.total_charging_power));
-                emitSysVar("PD_AUSGANG", num(sbInfo.total_output_power));
-                emitSysVar("PD_SOC", Math.round(num(sbInfo.total_battery_power) * 100));
-                emitSysVar("PD_NETZ_BEZUG", num(gridInfo.total_grid_input_power));
-                emitSysVar("PD_NETZ_EINSP", num(gridInfo.total_grid_output_power));
+                        const realSbs = sbList.filter(function(x) {
+                            return String(x.device_pn || "").toUpperCase() !== "AE100" && !isAnkerSmartMeter(x);
+                        });
 
-                const allSbs = (sbInfo.solarbank_list || []).filter(function(x) {
-                    return String(x.device_pn || "").toUpperCase() !== "AE100" && !isAnkerSmartMeter(x);
-                });
-
-                for (let idx = 0; idx < 4; idx++) {
-                    const targetSn = SOLARBANKS[idx];
-                    let sb = null;
-                    if (targetSn) {
-                        sb = allSbs.find(function(x) { return x.device_sn === targetSn; });
-                    } else if (allSbs[idx]) {
-                        sb = allSbs[idx];
-                    }
-                    if (sb) {
-                        const p = "SB" + (idx + 1) + "_";
-                        emitSysVar(p + "SOC", Math.round(num(sb.battery_power) * 100));
-                        emitSysVar(p + "SOLAR", num(sb.photovoltaic_power));
-                        emitSysVar(p + "AUSGANG", num(sb.output_power));
-                        emitSysVar(p + "AKKU", num(sb.charging_power));
-                        emitSysVar(p + "TEMP", num(sb.device_temperature));
-                    }
-                }
-
-                const lastStat = context.get("lastStatTime") || 0;
-                if (Date.now() - lastStat > 20 * 60 * 1000) {
-                    context.set("lastStatTime", Date.now());
-                    const todayStr = new Date().toISOString().slice(0, 10);
-                    const yearStr = todayStr.slice(0, 4);
-                    const statTypes = [
-                        { type: "day", start: todayStr, end: todayStr, prefix: "STAT_TAG_" },
-                        { type: "week", start: todayStr, end: todayStr, prefix: "STAT_WOCHE_" },
-                        { type: "month", start: todayStr, end: todayStr, prefix: "STAT_MONAT_" },
-                        { type: "year", start: yearStr + "-01-01", end: todayStr, prefix: "STAT_JAHR_" }
-                    ];
-
-                    for (let stIdx = 0; stIdx < statTypes.length; stIdx++) {
-                        const st = statTypes[stIdx];
-                        try {
-                            const stRes = await req("/power_service/v1/site/energy_analysis", {
-                                site_id: SITE_ID,
-                                device_sn: "",
-                                type: st.type,
-                                start_time: st.start,
-                                end_time: st.end,
-                                device_type: "solarbank"
-                            }, authHdrs);
-                            if (stRes && stRes.code === 0 && stRes.data) {
-                                const sd = stRes.data;
-                                emitSysVar(st.prefix + "SOLAR", num(sd.solar_production));
-                                emitSysVar(st.prefix + "VERBRAUCH", num(sd.home_usage));
-                                emitSysVar(st.prefix + "NETZ_BEZUG", num(sd.grid_to_home));
-                                emitSysVar(st.prefix + "NETZ_EINSP", num(sd.solar_to_grid));
+                        if (realSbs.length > 0) {
+                            const detectedSns = realSbs.map(function(x) { return x.device_sn || ""; });
+                            context.set("savedSolarbanks", detectedSns);
+                            for (let i = 0; i < 4; i++) {
+                                if (!SOLARBANKS[i] && detectedSns[i]) { SOLARBANKS[i] = detectedSns[i]; }
                             }
-                        } catch (e) {}
-                    }
-                }
+                        }
 
-                const timeStr = new Date().toLocaleTimeString("de-DE");
-                node.status({ fill: "green", shape: "dot", text: wakeupStatus + " (" + timeStr + ")" });
-                node.send([null, null, { topic: "status", payload: wakeupStatus, wakeupMode: WAKEUP_MODE || "Auto" }]);
+                        if (foundDock && foundDock.device_sn) {
+                            DEVICE_SN = foundDock.device_sn;
+                            DEVICE_PN = foundDock.device_pn || "AE100";
+                            WAKEUP_MODE = "PowerDock";
+                        } else if (foundMeter && foundMeter.device_sn) {
+                            DEVICE_SN = foundMeter.device_sn;
+                            DEVICE_PN = foundMeter.device_pn || "SHEM3";
+                            WAKEUP_MODE = "SmartMeter";
+                        } else if (realSbs.length > 0 && realSbs[0].device_sn) {
+                            DEVICE_SN = realSbs[0].device_sn;
+                            DEVICE_PN = realSbs[0].device_pn || "A17C1";
+                            WAKEUP_MODE = "Solarbank";
+                        }
+
+                        if (DEVICE_SN) {
+                            context.set("savedPowerdockSn", DEVICE_SN);
+                            context.set("savedPowerdockPn", DEVICE_PN);
+                            context.set("savedWakeupMode", WAKEUP_MODE);
+                        }
+                    }
+                    let wakeupStatus = "OK";
+                    const manualOverride = context.get("wakeupOverride");
+                    let shouldWakeup = false;
+
+                    if (manualOverride !== undefined) {
+                        shouldWakeup = Boolean(manualOverride);
+                    } else if (WAKEUP_MODE === "PowerDock" || WAKEUP_MODE === "SmartMeter") {
+                        shouldWakeup = true;
+                    } else {
+                        shouldWakeup = false;
+                    }
+
+                    if (DEVICE_SN && shouldWakeup) {
+                        wakeupStatus = triggerMqttWakeup(s, DEVICE_SN, DEVICE_PN, WAKEUP_MODE || "Auto");
+                    } else if (WAKEUP_MODE === "Solarbank" && !shouldWakeup) {
+                        wakeupStatus = "OK (Akkuschutz: Wakeup aus)";
+                    }
+
+                    const num = function(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+                    const sbInfo = scen.solarbank_info || {};
+                    const gridInfo = scen.grid_info || {};
+
+                    emitSysVar("PD_SOLAR", num(sbInfo.total_photovoltaic_power));
+                    emitSysVar("PD_HAUSLAST", num(scen.home_load_power));
+                    emitSysVar("PD_AKKU_LEISTUNG", num(sbInfo.total_charging_power));
+                    emitSysVar("PD_AUSGANG", num(sbInfo.total_output_power));
+                    emitSysVar("PD_SOC", Math.round(num(sbInfo.total_battery_power) * 100));
+                    emitSysVar("PD_NETZ_BEZUG", num(gridInfo.total_grid_input_power));
+                    emitSysVar("PD_NETZ_EINSP", num(gridInfo.total_grid_output_power));
+
+                    const allSbs = (sbInfo.solarbank_list || []).filter(function(x) {
+                        return String(x.device_pn || "").toUpperCase() !== "AE100" && !isAnkerSmartMeter(x);
+                    });
+
+                    for (let idx = 0; idx < 4; idx++) {
+                        const targetSn = SOLARBANKS[idx];
+                        let sb = null;
+                        if (targetSn) {
+                            sb = allSbs.find(function(x) { return x.device_sn === targetSn; });
+                        } else if (allSbs[idx]) {
+                            sb = allSbs[idx];
+                        }
+                        if (sb) {
+                            const p = "SB" + (idx + 1) + "_";
+                            emitSysVar(p + "SOC", Math.round(num(sb.battery_power) * 100));
+                            emitSysVar(p + "SOLAR", num(sb.photovoltaic_power));
+                            emitSysVar(p + "AUSGANG", num(sb.output_power));
+                            emitSysVar(p + "AKKU", num(sb.charging_power));
+                            emitSysVar(p + "TEMP", num(sb.device_temperature));
+                        }
+                    }
+
+                    const lastStat = context.get("lastStatTime") || 0;
+                    if (Date.now() - lastStat > 20 * 60 * 1000) {
+                        context.set("lastStatTime", Date.now());
+                        const todayStr = new Date().toISOString().slice(0, 10);
+                        const yearStr = todayStr.slice(0, 4);
+                        const statTypes = [
+                            { type: "day", start: todayStr, end: todayStr, prefix: "STAT_TAG_" },
+                            { type: "week", start: todayStr, end: todayStr, prefix: "STAT_WOCHE_" },
+                            { type: "month", start: todayStr, end: todayStr, prefix: "STAT_MONAT_" },
+                            { type: "year", start: yearStr + "-01-01", end: todayStr, prefix: "STAT_JAHR_" }
+                        ];
+
+                        for (let stIdx = 0; stIdx < statTypes.length; stIdx++) {
+                            const st = statTypes[stIdx];
+                            try {
+                                const stRes = await req("/power_service/v1/site/energy_analysis", {
+                                    site_id: SITE_ID,
+                                    device_sn: "",
+                                    type: st.type,
+                                    start_time: st.start,
+                                    end_time: st.end,
+                                    device_type: "solarbank"
+                                }, authHdrs);
+                                if (stRes && stRes.code === 0 && stRes.data) {
+                                    const sd = stRes.data;
+                                    emitSysVar(st.prefix + "SOLAR", num(sd.solar_production));
+                                    emitSysVar(st.prefix + "VERBRAUCH", num(sd.home_usage));
+                                    emitSysVar(st.prefix + "NETZ_BEZUG", num(sd.grid_to_home));
+                                    emitSysVar(st.prefix + "NETZ_EINSP", num(sd.solar_to_grid));
+                                }
+                            } catch (e) {}
+                        }
+                    }
+
+                    const timeStr = new Date().toLocaleTimeString("de-DE");
+                    node.status({ fill: "green", shape: "dot", text: wakeupStatus + " (" + timeStr + ")" });
+                    node.send([null, null, { topic: "status", payload: wakeupStatus, wakeupMode: WAKEUP_MODE || "Auto" }]);
+                } finally {
+                    context.set("isBusy", false);
+                }
             }
 
             run().catch(function(err) {
+                context.set("isBusy", false);
                 const msgTxt = (err && err.message) ? err.message : String(err);
                 node.status({ fill: "red", shape: "dot", text: "Fehler: " + msgTxt });
                 node.send([null, null, { topic: "error", payload: msgTxt }]);
