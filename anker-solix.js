@@ -26,60 +26,6 @@ module.exports = function(RED) {
                 node.send([null, null, { topic: "set_wakeup", payload: enableWakeup, status: stateTxt }]);
                 return;
             }
-
-            const EMAIL = (config.email || "").trim();
-            const PASSWORD = (node.credentials && node.credentials.password) ? node.credentials.password : "";
-            let SITE_ID = (config.siteId || "").trim() || context.get("savedSiteId") || "";
-            let DEVICE_SN = (config.powerdockSn || "").trim() || context.get("savedPowerdockSn") || "";
-            let DEVICE_PN = (config.powerdockPn || "").trim() || context.get("savedPowerdockPn") || "";
-            let WAKEUP_MODE = context.get("savedWakeupMode") || "";
-
-            let SV_MAP = {};
-            if (config.sysvarsJson) {
-                try { SV_MAP = JSON.parse(config.sysvarsJson); } catch (e) { SV_MAP = {}; }
-            }
-
-            const savedSbs = context.get("savedSolarbanks") || [];
-            const SOLARBANKS = [
-                (config.sb1Sn || "").trim() || savedSbs[0] || "",
-                (config.sb2Sn || "").trim() || savedSbs[1] || "",
-                (config.sb3Sn || "").trim() || savedSbs[2] || "",
-                (config.sb4Sn || "").trim() || savedSbs[3] || ""
-            ];
-
-            function emitSysVar(key, val) {
-                const svName = (SV_MAP[key] || "").trim();
-                if (!svName || val === null || val === undefined || isNaN(val)) { return; }
-                const lastSent = context.get("lastSent") || {};
-                if (lastSent[svName] === val) { return; }
-                lastSent[svName] = val;
-                context.set("lastSent", lastSent);
-                node.send([{ topic: svName, payload: val }, null, null]);
-            }
-
-            function req(apiPath, body, hdrs) {
-                return new Promise(function(resolve, reject) {
-                    const d = JSON.stringify(body);
-                    const h = Object.assign({
-                        "Content-Type": "application/json",
-                        "User-Agent": "AnkerPower/3.1.0 (Linux; U; Android 14; SM-S918B Build/UP1A.231005.007)",
-                        "Country": "DE",
-                        "Timezone": "GMT+01:00",
-                        "Model-Type": "PHONE",
-                        "App-Version": "3.1.0",
-                        "App-Name": "anker_power",
-                        "Os-Type": "android",
-                        "Content-Length": Buffer.byteLength(d)
-                    }, hdrs || {});
-                    const opts = { hostname: API_HOST, path: apiPath, method: "POST", headers: h };
-                    const r = https.request(opts, function(res) {
-                        let b = "";
-                        res.on("data", function(c) { b += c; });
-                        res.on("end", function() { try { resolve(JSON.parse(b)); } catch (e) { reject(e); } });
-                    });
-                    r.on("error", reject); r.write(d); r.end();
-                });
-            }
             function isAnkerSmartMeter(dev) {
                 if (!dev) { return false; }
                 const pn = String(dev.device_pn || "").toUpperCase();
@@ -109,28 +55,53 @@ module.exports = function(RED) {
                 }
 
                 try {
-                    const clientId = "android-ankerpower-" + crypto.randomBytes(8).toString("hex");
+                    const seq = (context.get("seq") || 1) + 1;
+                    context.set("seq", seq);
+                    const authH = { "X-Auth-Token": s.token, "gtoken": s.gtoken };
+                    req("/power_service/v1/site/get_site_homepage", {}, authH).catch(function() {});
+                    req("/power_service/v1/site/get_site_detail", { site_id: SITE_ID }, authH).catch(function() {});
+
+                    const cid = "android-anker_power-" + s.userId + "-" + s.mqttInfo.certificate_id;
+                    const randomSess = Math.floor(1000 + Math.random() * 9000) + "-" + Math.floor(1000 + Math.random() * 9000);
                     const brokerUrl = "mqtts://" + s.mqttInfo.endpoint_addr + ":8883";
+
                     const client = mqtt.connect(brokerUrl, {
-                        clientId: clientId,
-                        ca: s.mqttInfo.aws_root_ca || undefined,
-                        cert: s.mqttInfo.certificate_pem || undefined,
-                        key: s.mqttInfo.private_key || undefined,
-                        rejectUnauthorized: false,
+                        clientId: cid,
+                        key: s.mqttInfo.private_key,
+                        cert: s.mqttInfo.certificate_pem,
+                        ca: s.mqttInfo.aws_root_ca1_pem || s.mqttInfo.aws_root_ca || undefined,
+                        protocolVersion: 4,
+                        clean: true,
+                        reconnectPeriod: 0,
                         connectTimeout: 8000
                     });
 
                     client.on("connect", function() {
-                        const topic = "cmd/dev/" + targetPn + "/" + targetSn + "/pull_to_refresh";
-                        const payload = JSON.stringify({
-                            account_id: s.userId || "",
-                            device_sn: targetSn,
-                            command: "pull_to_refresh",
-                            timestamp: Math.floor(Date.now() / 1000)
+                        const nowSec = Math.floor(Date.now() / 1000);
+                        const t = Buffer.alloc(4); t.writeUInt32LE(300, 0);
+                        const ts = Buffer.alloc(4); ts.writeUInt32LE(nowSec, 0);
+                        const raw = Buffer.concat(Array.of(Buffer.from("ff09210003000f0057a10101a20502", "hex"), t, Buffer.from("a30503", "hex"), ts));
+                        let xor = 0;
+                        for (let i = 0; i < raw.length; i++) { xor ^= raw.readUInt8(i); }
+                        const b64 = Buffer.concat(Array.of(raw, Buffer.from(Array.of(xor)))).toString("base64");
+                        const msgObj = JSON.stringify({
+                            head: {
+                                version: "1.0.0.1",
+                                client_id: cid,
+                                sess_id: randomSess,
+                                msg_seq: seq,
+                                seed: 1,
+                                timestamp: nowSec,
+                                cmd_status: 1,
+                                cmd: 17,
+                                sign_code: 1,
+                                device_pn: targetPn,
+                                device_sn: targetSn
+                            },
+                            payload: JSON.stringify({ account_id: s.userId, device_sn: targetSn, data: b64 })
                         });
-                        client.publish(topic, payload, { qos: 0 }, function() {
-                            setTimeout(function() { try { client.end(true); } catch (e) {} }, 500);
-                        });
+                        client.publish("cmd/anker_power/" + targetPn + "/" + targetSn + "/req", msgObj, { qos: 0 });
+                        setTimeout(function() { try { client.end(true); } catch (e) {} }, 1500);
                     });
 
                     client.on("error", function() {
@@ -164,23 +135,20 @@ module.exports = function(RED) {
                     const cacheKey = "anker_session_" + EMAIL.toLowerCase();
                     let s = global.get(cacheKey) || {};
 
-                    if (!s.token || !s.userId || (s.expires && Date.now() > s.expires)) {
+                    if (!s.token || !s.userId || !s.mqttInfo || (s.expires && Date.now() > s.expires)) {
                         const ecdh = crypto.createECDH("prime256v1");
                         ecdh.generateKeys();
-                        const pubHex = ecdh.getPublicKey("hex");
-                        const shared = ecdh.computeSecret(Buffer.from(PUB_KEY, "hex"));
-                        const key = shared.slice(0, 16);
-                        const cipher = crypto.createCipheriv("aes-128-cbc", key, key);
-                        let enc = cipher.update(PASSWORD, "utf8", "base64");
-                        enc += cipher.final("base64");
+                        const sec = ecdh.computeSecret(Buffer.from(PUB_KEY, "hex"));
+                        const cip = crypto.createCipheriv("aes-256-cbc", sec.subarray(0, 32), sec.subarray(0, 16));
+                        const pwd = cip.update(PASSWORD, "utf8", "base64") + cip.final("base64");
 
                         const loginRes = await req("/passport/login", {
                             ab: "DE",
-                            client_secret_info: { public_key: pubHex },
-                            enc: 0,
+                            client_secret_info: { public_key: ecdh.getPublicKey("hex", "uncompressed") },
+                            enc: 1,
                             email: EMAIL,
-                            password: enc,
-                            time_zone: 3600000,
+                            password: pwd,
+                            time_zone: -3600000,
                             transaction: String(Date.now())
                         });
 
@@ -200,6 +168,7 @@ module.exports = function(RED) {
                             token: d.auth_token,
                             userId: d.user_id,
                             gtoken: gAuth,
+                            mqttInfo: null,
                             expires: Date.now() + (20 * 3600 * 1000)
                         };
 
@@ -259,10 +228,11 @@ module.exports = function(RED) {
                         const gridList = (scen.grid_info && scen.grid_info.grid_list) ? scen.grid_info.grid_list : [];
                         const ppsList = (scen.pps_info && scen.pps_info.pps_list) ? scen.pps_info.pps_list : [];
 
-                        let foundDock = null;
-                        if (scen.combiner_box_info && scen.combiner_box_info.combiner_box_list && scen.combiner_box_info.combiner_box_list.length > 0) {
+                        let foundDock = scen.powerdock_info || (scen.powerpanel_info && scen.powerpanel_info.powerdock_info) || null;
+                        if (!foundDock && scen.combiner_box_info && scen.combiner_box_info.combiner_box_list && scen.combiner_box_info.combiner_box_list.length > 0) {
                             foundDock = scen.combiner_box_info.combiner_box_list[0];
-                        } else {
+                        }
+                        if (!foundDock) {
                             foundDock = sbList.find(function(x) { return String(x.device_pn || "").toUpperCase() === "AE100"; }) ||
                                         ppsList.find(function(x) { return String(x.device_pn || "").toUpperCase() === "AE100"; });
                         }
@@ -321,17 +291,18 @@ module.exports = function(RED) {
                         wakeupStatus = "OK (Akkuschutz: Wakeup aus)";
                     }
 
-                    const num = function(v) { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
                     const sbInfo = scen.solarbank_info || {};
                     const gridInfo = scen.grid_info || {};
 
-                    emitSysVar("PD_SOLAR", num(sbInfo.total_photovoltaic_power));
-                    emitSysVar("PD_HAUSLAST", num(scen.home_load_power));
-                    emitSysVar("PD_AKKU_LEISTUNG", num(sbInfo.total_charging_power));
-                    emitSysVar("PD_AUSGANG", num(sbInfo.total_output_power));
-                    emitSysVar("PD_SOC", Math.round(num(sbInfo.total_battery_power) * 100));
-                    emitSysVar("PD_NETZ_BEZUG", num(gridInfo.total_grid_input_power));
-                    emitSysVar("PD_NETZ_EINSP", num(gridInfo.total_grid_output_power));
+                    emitSysVar("PD_HAUSLAST", Number(scen.home_load_power || 0));
+                    emitSysVar("PD_NETZ_BEZUG", Number(gridInfo.grid_to_home_power || gridInfo.total_grid_input_power || 0));
+                    emitSysVar("PD_NETZ_EINSP", Number(gridInfo.photovoltaic_to_grid_power || gridInfo.total_grid_output_power || 0));
+                    emitSysVar("PD_SOC", Math.round(Number(sbInfo.total_battery_power || 0) * 100));
+                    emitSysVar("PD_LADEN", Number(sbInfo.total_charging_power || 0));
+                    emitSysVar("PD_AKKU_LEISTUNG", Number(sbInfo.total_charging_power || 0));
+                    emitSysVar("PD_SOLAR", Number(sbInfo.total_photovoltaic_power || 0));
+                    emitSysVar("PD_ENTLADEN", Number(sbInfo.battery_discharge_power || 0));
+                    emitSysVar("PD_AUSGANG", Number(sbInfo.total_output_power || 0));
 
                     const allSbs = (sbInfo.solarbank_list || []).filter(function(x) {
                         return String(x.device_pn || "").toUpperCase() !== "AE100" && !isAnkerSmartMeter(x);
@@ -346,46 +317,117 @@ module.exports = function(RED) {
                             sb = allSbs[idx];
                         }
                         if (sb) {
-                            const p = "SB" + (idx + 1) + "_";
-                            emitSysVar(p + "SOC", Math.round(num(sb.battery_power) * 100));
-                            emitSysVar(p + "SOLAR", num(sb.photovoltaic_power));
-                            emitSysVar(p + "AUSGANG", num(sb.output_power));
-                            emitSysVar(p + "AKKU", num(sb.charging_power));
-                            emitSysVar(p + "TEMP", num(sb.device_temperature));
+                            const pv = sb.pv_power || {};
+                            const pfx = "SB" + (idx + 1) + "_";
+                            const socVal = Number(sb.battery_power || 0);
+                            emitSysVar(pfx + "SOC", socVal <= 1 ? Math.round(socVal * 100) : Math.round(socVal));
+                            emitSysVar(pfx + "SOLAR", Number(sb.photovoltaic_power || 0));
+                            emitSysVar(pfx + "LADEN", Number(sb.bat_charge_power || sb.charging_power || 0));
+                            emitSysVar(pfx + "AKKU", Number(sb.bat_charge_power || sb.charging_power || 0));
+                            emitSysVar(pfx + "OUTPUT", Number(sb.output_power || 0));
+                            emitSysVar(pfx + "AUSGANG", Number(sb.output_power || 0));
+                            emitSysVar(pfx + "TEMP", Number(sb.device_temperature || 0));
+                            emitSysVar(pfx + "PV1", Number(pv.pv1 || 0));
+                            emitSysVar(pfx + "PV2", Number(pv.pv2 || 0));
+                            emitSysVar(pfx + "PV3", Number(pv.pv3 || 0));
+                            emitSysVar(pfx + "PV4", Number(pv.pv4 || 0));
                         }
                     }
+                    const now = new Date();
+                    const nowMs = now.getTime();
+                    const min = now.getMinutes();
+                    if (min % 20 >= 1) {
+                        const slotIndex = Math.floor(min / 20);
+                        const today = now.toISOString().slice(0, 10);
+                        const currentSlot = today + "_" + now.getHours() + "_slot" + slotIndex;
+                        if (context.get("lastEnergySlot") !== currentSlot) {
+                            const dayOfWeek = now.getDay() || 7;
+                            const monday = new Date(now);
+                            monday.setDate(now.getDate() - dayOfWeek + 1);
+                            const weekStart = monday.toISOString().slice(0, 10);
+                            const monthStart = today.slice(0, 7) + "-01";
+                            const yearStart = today.slice(0, 4) + "-01-01";
 
-                    const lastStat = context.get("lastStatTime") || 0;
-                    if (Date.now() - lastStat > 20 * 60 * 1000) {
-                        context.set("lastStatTime", Date.now());
-                        const todayStr = new Date().toISOString().slice(0, 10);
-                        const yearStr = todayStr.slice(0, 4);
-                        const statTypes = [
-                            { type: "day", start: todayStr, end: todayStr, prefix: "STAT_TAG_" },
-                            { type: "week", start: todayStr, end: todayStr, prefix: "STAT_WOCHE_" },
-                            { type: "month", start: todayStr, end: todayStr, prefix: "STAT_MONAT_" },
-                            { type: "year", start: yearStr + "-01-01", end: todayStr, prefix: "STAT_JAHR_" }
-                        ];
-
-                        for (let stIdx = 0; stIdx < statTypes.length; stIdx++) {
-                            const st = statTypes[stIdx];
-                            try {
-                                const stRes = await req("/power_service/v1/site/energy_analysis", {
-                                    site_id: SITE_ID,
-                                    device_sn: "",
-                                    type: st.type,
-                                    start_time: st.start,
-                                    end_time: st.end,
-                                    device_type: "solarbank"
-                                }, authHdrs);
-                                if (stRes && stRes.code === 0 && stRes.data) {
-                                    const sd = stRes.data;
-                                    emitSysVar(st.prefix + "SOLAR", num(sd.solar_production));
-                                    emitSysVar(st.prefix + "VERBRAUCH", num(sd.home_usage));
-                                    emitSysVar(st.prefix + "NETZ_BEZUG", num(sd.grid_to_home));
-                                    emitSysVar(st.prefix + "NETZ_EINSP", num(sd.solar_to_grid));
+                            const targets = [
+                                { key: "gesamt", sn: "", devType: "solar_production" },
+                                { key: "gesamt_home", sn: "", devType: "home_usage" }
+                            ];
+                            for (let k = 0; k < 4; k++) {
+                                if (SOLARBANKS[k]) {
+                                    targets.push({ key: SOLARBANKS[k], sn: SOLARBANKS[k], devType: "solar_production" });
                                 }
-                            } catch (e) {}
+                            }
+
+                            const periods = [
+                                { name: "day", label: "TAG", apiType: "week", start: today, interval: 1140000 },
+                                { name: "week", label: "WOCHE", apiType: "week", start: weekStart, interval: 1140000 },
+                                { name: "month", label: "MONAT", apiType: "month", start: monthStart, interval: 7200000 },
+                                { name: "year", label: "JAHR", apiType: "year", start: yearStart, interval: 7200000 }
+                            ];
+
+                            const jobTimes = context.get("jobTimes") || {};
+                            const cache = context.get("energyCache") || {};
+                            let nextJob = null;
+
+                            for (let i = 0; i < targets.length; i++) {
+                                if (!cache[targets[i].key]) { cache[targets[i].key] = {}; }
+                                for (let j = 0; j < periods.length; j++) {
+                                    const jobId = targets[i].key + "_" + periods[j].name;
+                                    if (nowMs - (jobTimes[jobId] || 0) >= periods[j].interval) {
+                                        nextJob = { id: jobId, target: targets[i], period: periods[j] };
+                                        break;
+                                    }
+                                }
+                                if (nextJob) { break; }
+                            }
+
+                            if (nextJob) {
+                                context.set("lastEnergySlot", currentSlot);
+                                jobTimes[nextJob.id] = nowMs;
+                                context.set("jobTimes", jobTimes);
+                                try {
+                                    const stRes = await req("/power_service/v1/site/energy_analysis", {
+                                        site_id: SITE_ID,
+                                        device_sn: nextJob.target.sn,
+                                        type: nextJob.period.apiType,
+                                        start_time: nextJob.period.start,
+                                        end_time: today,
+                                        device_type: nextJob.target.devType
+                                    }, authHdrs);
+                                    if (stRes && stRes.code === 0 && stRes.data) {
+                                        cache[nextJob.target.key][nextJob.period.name] = stRes.data;
+                                        context.set("energyCache", cache);
+                                        for (let p = 0; p < periods.length; p++) {
+                                            const pk = periods[p].name;
+                                            const pl = periods[p].label;
+                                            if (cache.gesamt && cache.gesamt[pk]) {
+                                                const g = cache.gesamt[pk];
+                                                if (g.solar_total !== "") { emitSysVar("STAT_GES_" + pl + "_SOLAR", Number(g.solar_total)); }
+                                                if (g.charge_total !== "") { emitSysVar("STAT_GES_" + pl + "_LADEN", Number(g.charge_total)); }
+                                                if (g.discharge_total !== "") { emitSysVar("STAT_GES_" + pl + "_ENTLADEN", Number(g.discharge_total)); }
+                                                if (g.solar_to_home_total !== "") { emitSysVar("STAT_GES_" + pl + "_SOLAR_HAUS", Number(g.solar_to_home_total)); }
+                                                if (g.solar_to_grid_total !== "") { emitSysVar("STAT_GES_" + pl + "_EINSP", Number(g.solar_to_grid_total)); }
+                                            }
+                                            if (cache.gesamt_home && cache.gesamt_home[pk]) {
+                                                const gh = cache.gesamt_home[pk];
+                                                if (gh.grid_to_home_total !== "") { emitSysVar("STAT_GES_" + pl + "_NETZ", Number(gh.grid_to_home_total)); }
+                                                if (gh.home_usage_total !== "") { emitSysVar("STAT_GES_" + pl + "_HAUS", Number(gh.home_usage_total)); }
+                                                if (gh.battery_to_home_total !== "") { emitSysVar("STAT_GES_" + pl + "_BAT_HAUS", Number(gh.battery_to_home_total)); }
+                                            }
+                                            for (let sIdx = 0; sIdx < 4; sIdx++) {
+                                                const sSn = SOLARBANKS[sIdx];
+                                                if (sSn && cache[sSn] && cache[sSn][pk]) {
+                                                    const sbStat = cache[sSn][pk];
+                                                    const sPfx = "STAT_SB" + (sIdx + 1) + "_" + pl + "_";
+                                                    if (sbStat.solar_total !== "") { emitSysVar(sPfx + "SOLAR", Number(sbStat.solar_total)); }
+                                                    if (sbStat.charge_total !== "") { emitSysVar(sPfx + "LADEN", Number(sbStat.charge_total)); }
+                                                    if (sbStat.discharge_total !== "") { emitSysVar(sPfx + "ENTLADEN", Number(sbStat.discharge_total)); }
+                                                }
+                                            }
+                                        }
+                                    }
+                                } catch (e) {}
+                            }
                         }
                     }
 
@@ -411,3 +453,57 @@ module.exports = function(RED) {
         }
     });
 };
+
+            const EMAIL = (config.email || "").trim();
+            const PASSWORD = (node.credentials && node.credentials.password) ? node.credentials.password : "";
+            let SITE_ID = (config.siteId || "").trim() || context.get("savedSiteId") || "";
+            let DEVICE_SN = (config.powerdockSn || "").trim() || context.get("savedPowerdockSn") || "";
+            let DEVICE_PN = (config.powerdockPn || "").trim() || context.get("savedPowerdockPn") || "";
+            let WAKEUP_MODE = context.get("savedWakeupMode") || "";
+
+            let SV_MAP = {};
+            if (config.sysvarsJson) {
+                try { SV_MAP = JSON.parse(config.sysvarsJson); } catch (e) { SV_MAP = {}; }
+            }
+
+            const savedSbs = context.get("savedSolarbanks") || [];
+            const SOLARBANKS = [
+                (config.sb1Sn || "").trim() || savedSbs[0] || "",
+                (config.sb2Sn || "").trim() || savedSbs[1] || "",
+                (config.sb3Sn || "").trim() || savedSbs[2] || "",
+                (config.sb4Sn || "").trim() || savedSbs[3] || ""
+            ];
+
+            function emitSysVar(key, val) {
+                const svName = (SV_MAP[key] || "").trim();
+                if (!svName || val === null || val === undefined || isNaN(val)) { return; }
+                const lastSent = context.get("lastSent") || {};
+                if (lastSent[svName] === val) { return; }
+                lastSent[svName] = val;
+                context.set("lastSent", lastSent);
+                node.send([{ topic: svName, payload: val }, null, null]);
+            }
+
+            function req(apiPath, body, hdrs) {
+                return new Promise(function(resolve, reject) {
+                    const d = JSON.stringify(body);
+                    const h = Object.assign({
+                        "Content-Type": "application/json",
+                        "User-Agent": "AnkerPower/3.1.0 (Linux; U; Android 14; SM-S918B Build/UP1A.231005.007)",
+                        "Country": "DE",
+                        "Timezone": "GMT+01:00",
+                        "Model-Type": "PHONE",
+                        "App-Version": "3.1.0",
+                        "App-Name": "anker_power",
+                        "Os-Type": "android",
+                        "Content-Length": Buffer.byteLength(d)
+                    }, hdrs || {});
+                    const opts = { hostname: API_HOST, path: apiPath, method: "POST", headers: h };
+                    const r = https.request(opts, function(res) {
+                        let b = "";
+                        res.on("data", function(c) { b += c; });
+                        res.on("end", function() { try { resolve(JSON.parse(b)); } catch (e) { reject(e); } });
+                    });
+                    r.on("error", reject); r.write(d); r.end();
+                });
+            }
