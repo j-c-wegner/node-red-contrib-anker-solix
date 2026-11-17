@@ -26,6 +26,60 @@ module.exports = function(RED) {
                 node.send([null, null, { topic: "set_wakeup", payload: enableWakeup, status: stateTxt }]);
                 return;
             }
+
+            const EMAIL = (config.email || "").trim();
+            const PASSWORD = (node.credentials && node.credentials.password) ? node.credentials.password : "";
+            let SITE_ID = (config.siteId || "").trim() || context.get("savedSiteId") || "";
+            let DEVICE_SN = (config.powerdockSn || "").trim() || context.get("savedPowerdockSn") || "";
+            let DEVICE_PN = (config.powerdockPn || "").trim() || context.get("savedPowerdockPn") || "";
+            let WAKEUP_MODE = context.get("savedWakeupMode") || "";
+
+            let SV_MAP = {};
+            if (config.sysvarsJson) {
+                try { SV_MAP = JSON.parse(config.sysvarsJson); } catch (e) { SV_MAP = {}; }
+            }
+
+            const savedSbs = context.get("savedSolarbanks") || [];
+            const SOLARBANKS = [
+                (config.sb1Sn || "").trim() || savedSbs[0] || "",
+                (config.sb2Sn || "").trim() || savedSbs[1] || "",
+                (config.sb3Sn || "").trim() || savedSbs[2] || "",
+                (config.sb4Sn || "").trim() || savedSbs[3] || ""
+            ];
+
+            function emitSysVar(key, val) {
+                const svName = (SV_MAP[key] || "").trim();
+                if (!svName || val === null || val === undefined || isNaN(val)) { return; }
+                const lastSent = context.get("lastSent") || {};
+                if (lastSent[svName] === val) { return; }
+                lastSent[svName] = val;
+                context.set("lastSent", lastSent);
+                node.send([{ topic: svName, payload: val }, null, null]);
+            }
+
+            function req(apiPath, body, hdrs) {
+                return new Promise(function(resolve, reject) {
+                    const d = JSON.stringify(body);
+                    const h = Object.assign({
+                        "Content-Type": "application/json",
+                        "User-Agent": "AnkerPower/3.1.0 (Linux; U; Android 14; SM-S918B Build/UP1A.231005.007)",
+                        "Country": "DE",
+                        "Timezone": "GMT+01:00",
+                        "Model-Type": "PHONE",
+                        "App-Version": "3.1.0",
+                        "App-Name": "anker_power",
+                        "Os-Type": "android",
+                        "Content-Length": Buffer.byteLength(d)
+                    }, hdrs || {});
+                    const opts = { hostname: API_HOST, path: apiPath, method: "POST", headers: h };
+                    const r = https.request(opts, function(res) {
+                        let b = "";
+                        res.on("data", function(c) { b += c; });
+                        res.on("end", function() { try { resolve(JSON.parse(b)); } catch (e) { reject(e); } });
+                    });
+                    r.on("error", reject); r.write(d); r.end();
+                });
+            }
             function isAnkerSmartMeter(dev) {
                 if (!dev) { return false; }
                 const pn = String(dev.device_pn || "").toUpperCase();
@@ -203,7 +257,7 @@ module.exports = function(RED) {
                             node.send([null, null, { topic: "get_sites", payload: outTxt, sites: summary }]);
                             return;
                         }
-                        const ownSite = list.find(function(x) { return x.ms_type === 1; }) || list[0];
+                        const ownSite = list.find(function(x) { return x.ms_type === 1; }) || list;
                         if (ownSite && ownSite.site_id) {
                             SITE_ID = ownSite.site_id;
                             context.set("savedSiteId", SITE_ID);
@@ -230,7 +284,7 @@ module.exports = function(RED) {
 
                         let foundDock = scen.powerdock_info || (scen.powerpanel_info && scen.powerpanel_info.powerdock_info) || null;
                         if (!foundDock && scen.combiner_box_info && scen.combiner_box_info.combiner_box_list && scen.combiner_box_info.combiner_box_list.length > 0) {
-                            foundDock = scen.combiner_box_info.combiner_box_list[0];
+                            foundDock = scen.combiner_box_info.combiner_box_list;
                         }
                         if (!foundDock) {
                             foundDock = sbList.find(function(x) { return String(x.device_pn || "").toUpperCase() === "AE100"; }) ||
@@ -261,9 +315,9 @@ module.exports = function(RED) {
                             DEVICE_SN = foundMeter.device_sn;
                             DEVICE_PN = foundMeter.device_pn || "SHEM3";
                             WAKEUP_MODE = "SmartMeter";
-                        } else if (realSbs.length > 0 && realSbs[0].device_sn) {
-                            DEVICE_SN = realSbs[0].device_sn;
-                            DEVICE_PN = realSbs[0].device_pn || "A17C1";
+                        } else if (realSbs.length > 0 && realSbs.device_sn) {
+                            DEVICE_SN = realSbs.device_sn;
+                            DEVICE_PN = realSbs.device_pn || "A17C1";
                             WAKEUP_MODE = "Solarbank";
                         }
 
@@ -453,57 +507,3 @@ module.exports = function(RED) {
         }
     });
 };
-
-            const EMAIL = (config.email || "").trim();
-            const PASSWORD = (node.credentials && node.credentials.password) ? node.credentials.password : "";
-            let SITE_ID = (config.siteId || "").trim() || context.get("savedSiteId") || "";
-            let DEVICE_SN = (config.powerdockSn || "").trim() || context.get("savedPowerdockSn") || "";
-            let DEVICE_PN = (config.powerdockPn || "").trim() || context.get("savedPowerdockPn") || "";
-            let WAKEUP_MODE = context.get("savedWakeupMode") || "";
-
-            let SV_MAP = {};
-            if (config.sysvarsJson) {
-                try { SV_MAP = JSON.parse(config.sysvarsJson); } catch (e) { SV_MAP = {}; }
-            }
-
-            const savedSbs = context.get("savedSolarbanks") || [];
-            const SOLARBANKS = [
-                (config.sb1Sn || "").trim() || savedSbs[0] || "",
-                (config.sb2Sn || "").trim() || savedSbs[1] || "",
-                (config.sb3Sn || "").trim() || savedSbs[2] || "",
-                (config.sb4Sn || "").trim() || savedSbs[3] || ""
-            ];
-
-            function emitSysVar(key, val) {
-                const svName = (SV_MAP[key] || "").trim();
-                if (!svName || val === null || val === undefined || isNaN(val)) { return; }
-                const lastSent = context.get("lastSent") || {};
-                if (lastSent[svName] === val) { return; }
-                lastSent[svName] = val;
-                context.set("lastSent", lastSent);
-                node.send([{ topic: svName, payload: val }, null, null]);
-            }
-
-            function req(apiPath, body, hdrs) {
-                return new Promise(function(resolve, reject) {
-                    const d = JSON.stringify(body);
-                    const h = Object.assign({
-                        "Content-Type": "application/json",
-                        "User-Agent": "AnkerPower/3.1.0 (Linux; U; Android 14; SM-S918B Build/UP1A.231005.007)",
-                        "Country": "DE",
-                        "Timezone": "GMT+01:00",
-                        "Model-Type": "PHONE",
-                        "App-Version": "3.1.0",
-                        "App-Name": "anker_power",
-                        "Os-Type": "android",
-                        "Content-Length": Buffer.byteLength(d)
-                    }, hdrs || {});
-                    const opts = { hostname: API_HOST, path: apiPath, method: "POST", headers: h };
-                    const r = https.request(opts, function(res) {
-                        let b = "";
-                        res.on("data", function(c) { b += c; });
-                        res.on("end", function() { try { resolve(JSON.parse(b)); } catch (e) { reject(e); } });
-                    });
-                    r.on("error", reject); r.write(d); r.end();
-                });
-            }
