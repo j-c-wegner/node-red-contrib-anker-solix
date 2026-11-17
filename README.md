@@ -90,6 +90,8 @@ Zeiträume (`<ZEITRAUM>`): `TAG`, `WOCHE`, `MONAT`, `JAHR`
 
 ## Versionshistorie (Changelog)
 
+* **v1.0.18**
+  * Bugfix 
 * **v1.0.17**
   * Bugfix 
 * **v1.0.16**
