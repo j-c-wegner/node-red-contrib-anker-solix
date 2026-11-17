@@ -90,6 +90,8 @@ Zeiträume (`<ZEITRAUM>`): `TAG`, `WOCHE`, `MONAT`, `JAHR`
 
 ## Versionshistorie (Changelog)
 
+* **v1.0.16**
+  * Bugfix 
 * **v1.0.15** 
   * Zufalls-Jitter 3,5–7 Min., Smart-Meter-Master-Erkennung für alle Anker Smart Meter, Akkuschutz & set_wakeup für Einzelanlagen.
 * **v1.0.14**
