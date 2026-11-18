@@ -21,10 +21,10 @@ module.exports = function(RED) {
 
             const savedSbs = node.context().get("savedSolarbanks") || [];
             const SOLARBANKS = [
-                (config.sb1 || "").trim() || savedSbs[0] || "",
-                (config.sb2 || "").trim() || savedSbs[1] || "",
-                (config.sb3 || "").trim() || savedSbs[2] || "",
-                (config.sb4 || "").trim() || savedSbs[3] || ""
+                (config.sb1Sn || "").trim() || savedSbs[0] || "",
+                (config.sb2Sn || "").trim() || savedSbs[1] || "",
+                (config.sb3Sn || "").trim() || savedSbs[2] || "",
+                (config.sb4Sn || "").trim() || savedSbs[3] || ""
             ];
 
             let sysVars = {};
@@ -359,7 +359,7 @@ module.exports = function(RED) {
                         }
                     }
 
-                    if (!config.sb1 && savedSbs.length === 0 && scen.solarbank_info && scen.solarbank_info.solarbank_list) {
+                    if (!config.sb1sn && savedSbs.length === 0 && scen.solarbank_info && scen.solarbank_info.solarbank_list) {
                         const autoSbs = scen.solarbank_info.solarbank_list
                             .filter(function(x) { return String(x.device_pn || "").toUpperCase() !== "AE100" && !isAnkerSmartMeter(x); })
                             .map(function(x) { return x.device_sn; });
