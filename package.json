@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-anker-solix",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "Node-RED node to read real-time data and energy statistics from Anker SOLIX Solar & Energy Storage Systems (Solarbank 2/3, Solarbank Max, Power Dock AE100, Smart Meter) for OpenCCU, MQTT, Home Assistant, ioBroker, InfluxDB and KNX/Loxone.",
   "main": "anker-solix.js",
   "scripts": {
