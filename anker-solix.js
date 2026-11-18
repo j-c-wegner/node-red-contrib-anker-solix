@@ -69,13 +69,15 @@ module.exports = function(RED) {
                 return new Promise(function(resolve, reject) {
                     const bodyStr = JSON.stringify(bodyObj);
                     const headers = Object.assign({
-                        "Content-Type": "application/json",
-                        "Content-Length": Buffer.byteLength(bodyStr),
-                        "Country": "DE",
-                        "Timezone": "GMT+01:00",
-                        "App-Name": "anker_power",
-                        "Os-Type": "android"
-                    }, hdrs || {});
+                     "Content-Type": "application/json",
+                     "Content-Length": Buffer.byteLength(bodyStr),
+                     "Country": "DE",
+                     "Timezone": "GMT+01:00",
+                     "App-Name": "anker_power",
+                     "Os-Type": "android",
+                     "Model-Type": "DESKTOP"
+                 }, hdrs || {});
+
                     const r = https.request({
                         hostname: "ankerpower-api-eu." + "anker.com",
                         port: 443,
