@@ -1,48 +1,53 @@
 {
   "name": "node-red-contrib-anker-solix",
-  "version": "1.0.18",
-  "description": "Anker SOLIX OpenCCU All-in-One Baustein für Power Dock und bis zu 4 Solarbanks inklusive MQTT-Wakeup und Statistik-Abfrage",
+  "version": "1.0.19",
+  "description": "Node-RED node to read real-time data and energy statistics from Anker SOLIX Solar & Energy Storage Systems (Solarbank 2/3, Solarbank Max, Power Dock AE100, Smart Meter) for OpenCCU, MQTT, Home Assistant, ioBroker, InfluxDB and KNX/Loxone.",
   "main": "anker-solix.js",
-  "keywords": [
-    "node-red",
-    "anker",
-    "solix",
-    "anker-solix",
-    "solarbank",
-    "powerdock",
-    "balkonkraftwerk",
-    "solar",
-    "photovoltaik",
-    "pv",
-    "homematic",
-    "openccu",
-    "redmatic",
-    "raspberrymatic",
-    "ccu",
-    "ccu3",
-    "smart-home",
-    "energy",
-    "mqtt"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/j-c-wegner/node-red-contrib-anker-solix.git"
-  },
-  "bugs": {
-    "url": "https://github.com/j-c-wegner/node-red-contrib-anker-solix/issues"
-  },
-  "homepage": "https://github.com/j-c-wegner/node-red-contrib-anker-solix#readme",
-  "license": "MIT",
-  "engines": {
-    "node": ">=16.0.0"
-  },
-  "dependencies": {
-    "mqtt": "^5.0.0"
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "node-red": {
     "version": ">=2.0.0",
     "nodes": {
       "anker-solix": "anker-solix.js"
     }
+  },
+  "keywords": [
+    "node-red",
+    "anker",
+    "anker-solix",
+    "solix",
+    "solarbank",
+    "solarbank-2",
+    "solarbank-3",
+    "solarbank-max",
+    "power-dock",
+    "smart-meter",
+    "solar",
+    "battery",
+    "energy-storage",
+    "openccu",
+    "homematic",
+    "redmatic",
+    "mqtt",
+    "home-assistant",
+    "iobroker",
+    "influxdb",
+    "knx",
+    "loxone",
+    "smart-home"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+" + "https://" + "://github.com"
+  },
+  "bugs": {
+    "url": "https://" + "://github.com"
+  },
+  "homepage": "https://" + "://github.com",
+  "author": "j-c-wegner",
+  "license": "MIT",
+  "dependencies": {
+    "mqtt": "^5.10.1"
   }
 }
