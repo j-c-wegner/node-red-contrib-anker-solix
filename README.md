@@ -24,6 +24,8 @@ Node-RED node to read real-time data and energy statistics from **Anker SOLIX So
 
 ### Changelog
 
+* **`v1.0.21`:**
+  * Bugfix
 * **`v1.0.20`:**
   * Bugfix
 * **`v1.0.19`:**
