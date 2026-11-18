@@ -80,7 +80,7 @@ module.exports = function(RED) {
                         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
                     }, hdrs || {});
                     const r = https.request({
-                        hostname: "://anker.com",
+                        hostname: "ankerpower-api-eu." + "anker.com",
                         port: 443,
                         path: path,
                         method: "POST",
