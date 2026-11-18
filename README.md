@@ -25,6 +25,8 @@ Node-RED node to read real-time data and energy statistics from **Anker SOLIX So
 ### Changelog
 
 * **`v1.0.19`:**
+  * Bugfix
+* **`v1.0.19`:**
   * Added explicit hardware support for **Anker Smart Meter 2nd Gen (1-phase, `AE1X0`)** and AC-coupled home storage systems (**Solarbank Max `AE111`**, **Solarbank Max AC `A17E2` / `B17E2`**).
   * Prioritized manually entered Wakeup Device SN/PN over automatic detection.
   * Increased login protection cooldown to 5 minutes on wrong password errors (`26108`) to prevent account lockouts (`10019`).
