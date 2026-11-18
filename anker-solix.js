@@ -57,10 +57,15 @@ module.exports = function(RED) {
             function emitSysVar(key, val) {
                 const svName = (sysVars[key] || "").trim();
                 if (!svName || val === null || val === undefined || isNaN(val)) { return; }
+                const now = Date.now();
                 const lastSent = context.get("lastSent") || {};
-                if (lastSent[svName] !== val) {
+                const lastSentTime = context.get("lastSentTime") || {};
+                const elapsed = now - (lastSentTime[svName] || 0);
+                if (lastSent[svName] !== val || elapsed >= 300000) {
                     lastSent[svName] = val;
+                    lastSentTime[svName] = now;
                     context.set("lastSent", lastSent);
+                    context.set("lastSentTime", lastSentTime);
                     node.send([{ topic: svName, payload: val }, null, null]);
                 }
             }
@@ -69,14 +74,14 @@ module.exports = function(RED) {
                 return new Promise(function(resolve, reject) {
                     const bodyStr = JSON.stringify(bodyObj);
                     const headers = Object.assign({
-                     "Content-Type": "application/json",
-                     "Content-Length": Buffer.byteLength(bodyStr),
-                     "Country": "DE",
-                     "Timezone": "GMT+01:00",
-                     "App-Name": "anker_power",
-                     "Os-Type": "android",
-                     "Model-Type": "DESKTOP"
-                 }, hdrs || {});
+                        "Content-Type": "application/json",
+                        "Content-Length": Buffer.byteLength(bodyStr),
+                        "Country": "DE",
+                        "Timezone": "GMT+01:00",
+                        "App-Name": "anker_power",
+                        "Os-Type": "android",
+                        "Model-Type": "DESKTOP"
+                    }, hdrs || {});
 
                     const r = https.request({
                         hostname: "ankerpower-api-eu." + "anker.com",
@@ -96,6 +101,7 @@ module.exports = function(RED) {
                     r.end();
                 });
             }
+
             function isAnkerSmartMeter(dev) {
                 if (!dev) { return false; }
                 const pn = String(dev.device_pn || "").toUpperCase();
@@ -109,87 +115,89 @@ module.exports = function(RED) {
                 const pn = String(dev.device_pn || "").toUpperCase();
                 return ["AE111", "A17E2", "B17E2"].indexOf(pn) !== -1;
             }
-
-            function buildPullToRefreshBytes(devicePn) {
-                const pnStr = String(devicePn || "AE100");
-                const pnBuf = Buffer.from(pnStr, "utf8");
-                const valBuf = Buffer.from([0x01]);
-                const f1 = Buffer.concat([Buffer.from([0xa1, 0x01]), Buffer.from([pnBuf.length]), pnBuf]);
-                const f2 = Buffer.concat([Buffer.from([0xa2, 0x02]), Buffer.from([valBuf.length]), valBuf]);
-                const payload = Buffer.concat([f1, f2]);
-
-                const ts = Math.floor(Date.now() / 1000);
-                const header = Buffer.from([
-                    0xff, 0x09,
-                    0x00, 0x00,
-                    0x03, 0x00, 0x0f,
-                    0x00, 0x57,
-                    0x01, 0x01, 0x11,
-                    0x00, 0x00, 0x00, 0x00
-                ]);
-                header.writeUInt32BE(ts, 12);
-
-                const body = Buffer.concat([header, payload]);
-                body.writeUInt16LE(body.length + 1, 2);
-
-                let xor = 0;
-                for (let i = 0; i < body.length; i++) { xor ^= body[i]; }
-                return Buffer.concat([body, Buffer.from([xor])]);
-            }
-
-            function triggerMqttWakeup(session, devSn, devPn, modeLabel) {
+            function triggerMqttWakeup(session, devSn, devPn, modeLabel, authHdrs, forceWake) {
                 const now = Date.now();
-                const nextAllowed = context.get("nextWakeupTime") || 0;
-                if (now < nextAllowed) {
+                const wakeKey = "anker_wakeup_" + EMAIL.replace(/[^a-zA-Z0-9]/g, "_") + "_" + devSn;
+                const nextAllowed = global.get(wakeKey) || 0;
+
+                if (!forceWake && now < nextAllowed) {
                     const remSec = Math.ceil((nextAllowed - now) / 1000);
                     return "OK (nächster Wakeup in " + remSec + "s)";
                 }
 
-                const randomDelayMs = (210 + Math.floor(Math.random() * 211)) * 1000;
-                context.set("nextWakeupTime", now + randomDelayMs);
+                const randomDelayMs = (180 + Math.floor(Math.random() * 61)) * 1000;
+                global.set(wakeKey, now + randomDelayMs);
+
+                req("/power_service/v1/site/get_site_homepage", {}, authHdrs).catch(function() {});
+                req("/power_service/v1/site/get_site_detail", { site_id: SITE_ID }, authHdrs).catch(function() {});
 
                 if (!session.mqttInfo || !session.mqttInfo.endpoint_addr || !session.mqttInfo.private_key) {
                     return "OK (Cloud aktiv)";
                 }
                 try {
                     const m = session.mqttInfo;
-                    const clientId = "android-" + m.app_name + "-" + session.userId + "-" + m.thing_name + "-" + Math.floor(Math.random() * 100000);
-                    const client = mqtt.connect("mqtts://" + m.endpoint_addr + ":8883", {
-                        clientId: clientId,
+                    const seq = (context.get("mqttSeq") || 1) + 1;
+                    context.set("mqttSeq", seq);
+
+                    const cid = "android-anker_power-" + session.userId + "-" + m.certificate_id;
+                    const randomSess = Math.floor(1000 + Math.random() * 9000) + "-" + Math.floor(1000 + Math.random() * 9000);
+                    const connectOpts = {
+                        clientId: cid,
                         cert: m.certificate_pem,
                         key: m.private_key,
-                        rejectUnauthorized: false,
+                        protocolVersion: 4,
+                        clean: true,
                         connectTimeout: 8000,
                         reconnectPeriod: 0
-                    });
+                    };
+                    if (m.aws_root_ca1_pem) { connectOpts.ca = m.aws_root_ca1_pem; }
+
+                    const client = mqtt.connect("mqtts://" + m.endpoint_addr + ":8883", connectOpts);
                     client.on("connect", function() {
-                        const topicPub = "cmd/anker_power/" + devPn + "/" + devSn + "/req";
-                        const hexPayload = buildPullToRefreshBytes(devPn).toString("hex");
-                        const msgObj = {
+                        const nowSec = Math.floor(Date.now() / 1000);
+                        const t = Buffer.alloc(4);
+                        t.writeUInt32LE(300, 0);
+                        const ts = Buffer.alloc(4);
+                        ts.writeUInt32LE(nowSec, 0);
+                        const raw = Buffer.concat([
+                            Buffer.from("ff09210003000f0057a10101a20502", "hex"),
+                            t,
+                            Buffer.from("a30503", "hex"),
+                            ts
+                        ]);
+                        let xor = 0;
+                        for (let i = 0; i < raw.length; i++) { xor ^= raw.readUInt8(i); }
+                        const b64 = Buffer.concat([raw, Buffer.from([xor])]).toString("base64");
+
+                        const msgObj = JSON.stringify({
                             head: {
                                 version: "1.0.0.1",
-                                client_id: clientId,
-                                sess_id: "5678-1234",
-                                msg_seq: 1,
+                                client_id: cid,
+                                sess_id: randomSess,
+                                msg_seq: seq,
                                 seed: 1,
-                                timestamp: Math.floor(Date.now() / 1000),
-                                cmd_status: 2,
+                                timestamp: nowSec,
+                                cmd_status: 1,
                                 cmd: 17,
                                 sign_code: 1,
                                 device_pn: devPn,
                                 device_sn: devSn
                             },
                             payload: JSON.stringify({
-                                packet: {
-                                    data: hexPayload
-                                }
+                                account_id: session.userId,
+                                device_sn: devSn,
+                                data: b64
                             })
-                        };
-                        client.publish(topicPub, JSON.stringify(msgObj), { qos: 0 }, function() {
-                            setTimeout(function() { client.end(true); }, 600);
+                        });
+                        client.publish("cmd/anker_power/" + devPn + "/" + devSn + "/req", msgObj, { qos: 1 }, function() {
+                            setTimeout(function() {
+                                try { client.end(true); } catch (e) {}
+                            }, 1500);
                         });
                     });
                     client.on("error", function() {
+                        const sessionKey = "anker_session_" + EMAIL.replace(/[^a-zA-Z0-9]/g, "_");
+                        global.set(sessionKey, null);
                         try { client.end(true); } catch (e) {}
                     });
                     const nextSec = Math.round(randomDelayMs / 1000);
@@ -281,11 +289,9 @@ module.exports = function(RED) {
                                 return { site_id: x.site_id, site_name: x.site_name, ms_type: x.ms_type };
                             });
                             if (isGetSites) {
-                                node.status({ fill: "blue", shape: "dot", text: sites.length + " Anlage(n) gefunden" });
                                 node.send([null, null, { topic: "site_list", payload: sites }]);
-                                return;
                             }
-                            if (sites.length > 0) {
+                            if (!SITE_ID && sites.length > 0) {
                                 const ownSite = sites.find(function(x) { return x.ms_type === 1; }) || sites[0];
                                 SITE_ID = ownSite.site_id;
                                 context.set("savedSiteId", SITE_ID);
@@ -314,7 +320,6 @@ module.exports = function(RED) {
 
                     const scen = scenRes.data;
                     node.send([null, { topic: "scen_info", payload: scen }, null]);
-
                     if (!manualSn && (!DEVICE_SN || !WAKEUP_MODE)) {
                         const pdList = (scen.powerdock_info && scen.powerdock_info.powerdock_list) || [];
                         const gridList = (scen.grid_info && scen.grid_info.grid_list) || [];
@@ -352,7 +357,7 @@ module.exports = function(RED) {
                         }
                     }
 
-                    if (!config.sb1sn && savedSbs.length === 0 && scen.solarbank_info && scen.solarbank_info.solarbank_list) {
+                    if (!config.sb1Sn && savedSbs.length === 0 && scen.solarbank_info && scen.solarbank_info.solarbank_list) {
                         const autoSbs = scen.solarbank_info.solarbank_list
                             .filter(function(x) { return String(x.device_pn || "").toUpperCase() !== "AE100" && !isAnkerSmartMeter(x); })
                             .map(function(x) { return x.device_sn; });
@@ -361,6 +366,20 @@ module.exports = function(RED) {
                             for (let i = 0; i < 4; i++) { SOLARBANKS[i] = autoSbs[i] || ""; }
                         }
                     }
+
+                    const liveSig = String(scen.home_load_power) + "|" + String(scen.grid_info && scen.grid_info.grid_to_home_power) + "|" + String(scen.solarbank_info && scen.solarbank_info.total_photovoltaic_power);
+                    const lastLiveSig = context.get("lastLiveSig") || "";
+                    let lastLiveChange = context.get("lastLiveChange") || Date.now();
+                    if (liveSig !== lastLiveSig) {
+                        context.set("lastLiveSig", liveSig);
+                        lastLiveChange = Date.now();
+                        context.set("lastLiveChange", lastLiveChange);
+                    }
+                    const isStalled = (Date.now() - lastLiveChange > 90000);
+                    if (isStalled) {
+                        context.set("lastLiveChange", Date.now());
+                    }
+
                     let wakeupStatus = "OK (Cloud aktiv)";
                     const wakeupOverride = context.get("wakeupOverride");
                     let shouldWakeup = false;
@@ -378,9 +397,8 @@ module.exports = function(RED) {
                     }
 
                     if (shouldWakeup && DEVICE_SN) {
-                        wakeupStatus = triggerMqttWakeup(s, DEVICE_SN, DEVICE_PN, WAKEUP_MODE || "Auto");
+                        wakeupStatus = triggerMqttWakeup(s, DEVICE_SN, DEVICE_PN, WAKEUP_MODE || "Auto", authHdrs, isStalled);
                     }
-
                     if (scen.home_load_power !== undefined) { emitSysVar("PD_HAUSLAST", Number(scen.home_load_power)); }
                     if (scen.grid_info) {
                         if (scen.grid_info.grid_to_home_power !== undefined) { emitSysVar("PD_NETZ_BEZUG", Number(scen.grid_info.grid_to_home_power)); }
@@ -421,6 +439,7 @@ module.exports = function(RED) {
                             if (sb.solar_power_4 !== undefined) { emitSysVar(pfx + "PV4", Number(sb.solar_power_4)); }
                         }
                     }
+
                     const lastStatFetch = context.get("lastStatFetch") || 0;
                     if (Date.now() - lastStatFetch > 300000) {
                         context.set("lastStatFetch", Date.now());
