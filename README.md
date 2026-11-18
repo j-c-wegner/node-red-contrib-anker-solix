@@ -24,7 +24,7 @@ Node-RED node to read real-time data and energy statistics from **Anker SOLIX So
 
 ### Changelog
 
-* **`v1.0.24`:**
+* **`v1.0.25`:**
   * Bugfix
 * **`v1.0.19`:**
   * Added explicit hardware support for **Anker Smart Meter 2nd Gen (1-phase, `AE1X0`)** and AC-coupled home storage systems (**Solarbank Max `AE111`**, **Solarbank Max AC `A17E2` / `B17E2`**).
