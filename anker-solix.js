@@ -304,7 +304,7 @@ module.exports = function(RED) {
                         return;
                     }
                     if (!scenRes || scenRes.code !== 0 || !scenRes.data) {
-                        const errTxt = "API-Fehler: " + (scenRes ? scenRes.code : "Keine Daten");
+                        const errTxt = "API-Fehler: " + (scenRes ? (scenRes.code + " (" + String(scenRes.raw || "").substring(0, 60) + ")") : "Keine Daten");
                         node.status({ fill: "red", shape: "dot", text: errTxt });
                         node.send([null, null, { topic: "error", payload: errTxt }]);
                         return;
