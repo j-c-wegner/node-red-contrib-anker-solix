@@ -1,6 +1,6 @@
 # node-red-contrib-anker-solix
 
-🌐 **Language / Sprache:** [🇬🇧 English Documentation]("https://" + "://github.com") | [🇩🇪 Deutsche Anleitung]("https://" + "://github.com")
+🌐 **Language / Sprache:** [🇬🇧 English Documentation](README.en.md) | [🇩🇪 Deutsche Anleitung](README.de.md)
 
 ---
 
@@ -14,11 +14,11 @@ Node-RED node to read real-time data and energy statistics from **Anker SOLIX So
 
 ### Visual Quick Start
 
-![Node-RED Flow Overview]("https://" + "://githubusercontent.com")
+![Node-RED Flow Overview](images/flow-overview.png)
 
-![Node Configuration]("https://" + "://githubusercontent.com")
+![Node Configuration](images/node-config.png)
 
-👉 **[Read the full English Documentation (Installation, SysVars, MQTT & Commands)]("https://" + "://github.com")**
+👉 **[Read the full English Documentation (Installation, SysVars, MQTT & Commands)](README.en.md)**
 
 ---
 
@@ -63,7 +63,7 @@ Node-RED-Baustein zum Auslesen von Echtzeit- und Statistikdaten für **Anker SOL
 * **Intelligente Hardware-Erkennung & Akkuschutz:** Erkennt Power Dock (`AE100`), Anker Smart Meter (`A17X7`, `A17X8`, `AE1X0`, `AE1R0`, `SHEM3`) und 230V-Heimspeicher (`AE111`, `A17E2`, `B17E2`) automatisch für lückenlose Echtzeitdaten, während reine Solarbank-Anlagen nachts im akkuschonenden Schlafmodus bleiben.
 * **EU-Cloud-Unterstützung:** Funktioniert mit allen europäischen Anker-SOLIX-Konten (`://anker.com`).
 
-👉 **[Zur vollständigen deutschen Anleitung (Installation, Systemvariablen, MQTT & Steuerbefehle)]("https://" + "://github.com")**
+👉 **[Zur vollständigen deutschen Anleitung (Installation, Systemvariablen, MQTT & Steuerbefehle)](README.de.md)**
 
 ### Rechtliche Hinweise, Transparenz & Haftungsausschluss (Deutsch)
 
