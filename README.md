@@ -31,7 +31,7 @@ Node-RED node to read real-time data and energy statistics from **Anker SOLIX So
   * Added structured section headers (`_ANLEITUNG_1`, `_BEREICH_...`) to the default SysVars JSON template and example flow.
   * Introduced multilingual documentation (`README.md`, `README.en.md`, `README.de.md`).
 * **`v1.0.18`:** Implemented binary MQTT `pull_to_refresh` (`cmd: 17`) with randomized jitter (`3.5–7 min`) and automatic battery protection for standalone solarbanks.
-* **`v1.0.17`:** Added `set_wakeup` runtime command (`true` / `false` / `"auto"`) and `get_sites` multi-site discovery.
+* **`v1.0.15`:** Added `set_wakeup` runtime command (`true` / `false` / `"auto"`) and `get_sites` multi-site discovery.
 
 ---
 
