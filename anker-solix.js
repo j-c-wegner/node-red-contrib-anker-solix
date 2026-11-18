@@ -221,22 +221,16 @@ module.exports = function(RED) {
                         node.status({ fill: "yellow", shape: "dot", text: "Login läuft..." });
                         const ecdh = crypto.createECDH("prime256v1");
                         ecdh.generateKeys();
-                        const clientPubHex = ecdh.getPublicKey("hex");
-                        const sharedSecret = ecdh.computeSecret(Buffer.from(PUB_KEY, "hex"));
-                        const iv = sharedSecret.subarray(0, 16);
-
-                        const cipher = crypto.createCipheriv("aes-256-cbc", sharedSecret, iv);
-                        let encHex = cipher.update(PASSWORD, "utf8", "hex");
-                        encHex += cipher.final("hex");
+                        const sec = ecdh.computeSecret(Buffer.from(PUB_KEY, "hex"));
+                        const cip = crypto.createCipheriv("aes-256-cbc", sec.subarray(0, 32), sec.subarray(0, 16));
+                        const pwd = cip.update(PASSWORD, "utf8", "base64") + cip.final("base64");
 
                         const loginRes = await req("/passport/login", {
                             ab: "DE",
-                            client_secret_info: { public_key: clientPubHex },
-                            enc: 0,
+                            client_secret_info: { public_key: ecdh.getPublicKey("hex", "uncompressed") },
+                            enc: 1,
                             email: EMAIL,
-                            password: encHex,
-                            time_zone: new Date().getTimezoneOffset() * -60 * 1000,
-                            transaction: String(Date.now())
+                            password: pwd
                         }, { "gtoken": "" });
 
                         if (!loginRes || loginRes.code !== 0 || !loginRes.data) {
