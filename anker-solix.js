@@ -74,10 +74,7 @@ module.exports = function(RED) {
                         "Country": "DE",
                         "Timezone": "GMT+01:00",
                         "App-Name": "anker_power",
-                        "Os-Type": "android",
-                        "Model-Type": "DESKTOP",
-                        "Version": "3.0.0",
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                        "Os-Type": "android"
                     }, hdrs || {});
                     const r = https.request({
                         hostname: "ankerpower-api-eu." + "anker.com",
