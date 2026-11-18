@@ -37,14 +37,9 @@
     "loxone",
     "smart-home"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git+" + "https://" + "://github.com"
-  },
-  "bugs": {
-    "url": "https://" + "://github.com"
-  },
-  "homepage": "https://" + "://github.com",
+   "repository": "github:j-c-wegner/node-red-contrib-anker-solix",
+  "bugs": "j-c-wegner/node-red-contrib-anker-solix",
+  "homepage": "github:j-c-wegner/node-red-contrib-anker-solix",
   "author": "j-c-wegner",
   "license": "MIT",
   "dependencies": {
