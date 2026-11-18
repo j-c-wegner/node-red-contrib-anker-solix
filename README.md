@@ -1,117 +1,73 @@
 # node-red-contrib-anker-solix
 
-Ein All-in-One Node-RED-Baustein zur direkten Einbindung deiner **Anker SOLIX Anlage** in **OpenCCU / Homematic (RedMatic)** – inklusive automatischem MQTT-Wakeup und Cloud-schonender Statistik-Abfrage.
+🌐 **Language / Sprache:** [🇬🇧 English Documentation]("https://" + "://github.com") | [🇩🇪 Deutsche Anleitung]("https://" + "://github.com")
 
 ---
 
-## Screenshots & Aufbau
+## 🇬🇧 Overview (English)
 
-### Flow-Verkabelung
-![Flow Aufbau](https://raw.githubusercontent.com/j-c-wegner/node-red-contrib-anker-solix/main/images/flow.png)
+Node-RED node to read real-time data and energy statistics from **Anker SOLIX Solar & Energy Storage Systems** (Solarbank 2 E1600 Pro/Plus, Solarbank 3 E2700 Pro, Solarbank Max `AE111`, Solarbank Max AC `A17E2`/`B17E2`, Power Dock `AE100`, and Anker Smart Meters) via the **Anker EU Cloud**.
 
-### Konfiguration im Baustein
-![Flow Aufbau](https://raw.githubusercontent.com/j-c-wegner/node-red-contrib-anker-solix/main/images/config.png)
+* **Universal Output 1 (`{ topic, payload }`):** Sends delta-filtered values directly to **OpenCCU / HomeMatic** (`ccu-sysvar`), **MQTT Brokers** (`mqtt out` for Home Assistant / ioBroker), **InfluxDB**, or **KNX / Loxone**.
+* **Smart Hardware Auto-Detection & Battery Protection:** Automatically detects Power Dock (`AE100`), Anker Smart Meters (`A17X7`, `A17X8`, `AE1X0`, `AE1R0`, `SHEM3`), and AC-coupled home storage (`AE111`, `A17E2`, `B17E2`) for continuous real-time updates, while keeping standalone solarbanks in battery-safe sleep mode at night.
+* **EU Cloud Support:** Works with all European Anker SOLIX accounts (`://anker.com`).
 
----
+### Visual Quick Start
 
-## Unterstützte Hardware & Anlagen-Konfigurationen
+![Node-RED Flow Overview]("https://" + "://githubusercontent.com")
 
-* **Mit Anker SOLIX Power Dock (AE100):** Unterstützt **bis zu 4 Solarbanks** (Solarbank 2 Pro/Plus, Solarbank 3 Pro und Solarbank 4 Pro – auch gemischt) in einer gemeinsamen Anlage (`SITE_ID`).
-* **Ohne Power Dock – Solarbank 2 & Solarbank 3:** Unterstützt **1 Solarbank** pro Anlage (`SITE_ID`). Mehrere Geräte ohne Power Dock können über getrennte Bausteine mit ihrer jeweiligen `SITE_ID` eingebunden werden.
-* **Ohne Power Dock – Solarbank 4 (E5000 Pro):** Unterstützt im **DIY-Parallelmodus bis zu 3 Solarbanks** ohne Power Dock in einer gemeinsamen Anlage.
----
+![Node Configuration]("https://" + "://githubusercontent.com")
 
-## Features
-
-* **Live-Werte & Einzel-Strings:** Liest Hauslast, Netzbezug, Netzeinspeisung, Gesamtladezustand sowie die Einzelwerte (SOC, Solarleistung, PV1–PV4) von bis zu 4 Solarbanks aus.
-* **Automatischer MQTT-Wakeup:** Sendet alle 4 Minuten einen Pull-to-Refresh-Impuls an das Power Dock (oder automatisch an die erste Solarbank, falls kein Power Dock vorhanden ist), damit die Cloud-Werte ohne offene App aktuell bleiben.
-* **Statistik-Abfrage (kWh):** Ruft Tages-, Wochen-, Monats- und Jahreswerte gestaffelt alle 20 Minuten (`:01`, `:21`, `:41`) ab, um die Anker-API zu schonen.
-* **Zero-Config Auto-Erkennung & `get_sites`-Befehl:** `Site ID`, `Wakeup Gerät SN` und `Solarbank 1–4 SN` werden beim ersten Start automatisch ermittelt. Mit `msg.topic = "get_sites"` am Eingang lassen sich jederzeit alle Anlagen im Konto abrufen.
-* **3 getrennte Ausgänge:** Ausgang 1 für gefilterte OpenCCU-Systemvariablen (`rbe`), Ausgang 2 für die kompletten Cloud-Rohdaten (`get_scen_info`), Ausgang 3 für Status- und Debug-Meldungen.
-* **Integrierter Beispiel-Flow:** Nach der Installation direkt in Node-RED unter **Menü > Import > Beispiele > `node-red-contrib-anker-solix`** verfügbar.
+👉 **[Read the full English Documentation (Installation, SysVars, MQTT & Commands)]("https://" + "://github.com")**
 
 ---
 
-## Installation
+### Changelog
 
-### Über den Node-RED Palette-Manager (Empfohlen)
-1. Öffne in Node-RED das Menü oben rechts (`≡`) und wähle **Palette verwalten**.
-2. Wechsle auf den Reiter **Installieren** und suche nach `node-red-contrib-anker-solix`.
-3. Klicke auf **Installieren**.
-
-### Über die Kommandozeile (NPM)
-```bash
-npm install node-red-contrib-anker-solix
-```
-
----
-
-## Verkabelung & Ausgänge
-
-1. **Eingang:** Mit einem **Inject-Node** verbinden (empfohlenes Intervall: alle **5 Sekunden**).
-   * *Spezialbefehl:* Wird eine Nachricht mit `msg.topic = "get_sites"` (oder `msg.payload = "get_sites"`) gesendet, gibt der Baustein sofort alle im Konto verfügbaren Anlagen inkl. Name und `SITE_ID` auf Ausgang 3 und im Debug-Fenster aus.
-2. **Ausgang 1 (`OpenCCU SysVars`):** Direkt mit **einem einzigen blauen OpenCCU-SysVar-Node** verbinden. Im OpenCCU-Node muss das Feld **Variable / Name leer** bleiben, da der Zielname automatisch über `msg.topic` übergeben wird.
-3. **Ausgang 2 (`Cloud Rohdaten`):** Gibt das komplette JSON-Objekt (`get_scen_info`) der Anker-Cloud zur freien Weiterverarbeitung aus.
-4. **Ausgang 3 (`Debug / Status`):** Gibt Statusmeldungen sowie bei `get_sites` die Liste aller gefundenen Anlagen aus.
+* **`v1.0.19`:**
+  * Added explicit hardware support for **Anker Smart Meter 2nd Gen (1-phase, `AE1X0`)** and AC-coupled home storage systems (**Solarbank Max `AE111`**, **Solarbank Max AC `A17E2` / `B17E2`**).
+  * Prioritized manually entered Wakeup Device SN/PN over automatic detection.
+  * Increased login protection cooldown to 5 minutes on wrong password errors (`26108`) to prevent account lockouts (`10019`).
+  * Added structured section headers (`_ANLEITUNG_1`, `_BEREICH_...`) to the default SysVars JSON template and example flow.
+  * Introduced multilingual documentation (`README.md`, `README.en.md`, `README.de.md`).
+* **`v1.0.18`:** Implemented binary MQTT `pull_to_refresh` (`cmd: 17`) with randomized jitter (`3.5–7 min`) and automatic battery protection for standalone solarbanks.
+* **`v1.0.17`:** Added `set_wakeup` runtime command (`true` / `false` / `"auto"`) and `get_sites` multi-site discovery.
 
 ---
 
-## Verfügbare Datenpunkte
+### Planned Roadmap (Unbinding / Subject to Change)
 
-### Power Dock / Gesamtanlage Live (`W` bzw. `%`)
-* `PD_HAUSLAST`: Aktuelle Hauslast gesamt (W)
-* `PD_NETZ_BEZUG`: Aktueller Netzbezug vom Versorger (W)
-* `PD_NETZ_EINSP`: Aktuelle Netzeinspeisung (W)
-* `PD_SOC`: Gesamter Akkustand aller Speicher (%)
-* `PD_LADEN`: Aktuelle Gesamtladeleistung aller Akkus (W)
-* `PD_SOLAR`: Aktuelle Gesamtsolarleistung aller Speicher (W)
-* `PD_ENTLADEN`: Aktuelle Gesamtentladeleistung aller Akkus (W)
-
-### Einzelne Solarbanks Live (`SB1_` bis `SB4_`, `W` bzw. `%`)
-* `SBx_SOC`: Akkustand der jeweiligen Solarbank (`SB1`–`SB4`) (%)
-* `SBx_SOLAR`: Gesamte Solarleistung dieser Solarbank (W)
-* `SBx_LADEN`: Aktuelle Ladeleistung (W)
-* `SBx_OUTPUT`: Aktuelle Ausgangsleistung ins Haus / Power Dock (W)
-* `SBx_PV1` bis `SBx_PV4`: Leistung der einzelnen Solar-Eingänge 1 bis 4 (W)
-
-### Statistik Gesamt & Einzel-Solarbanks (`kWh`)
-Zeiträume (`<ZEITRAUM>`): `TAG`, `WOCHE`, `MONAT`, `JAHR`
-* `STAT_GES_<ZEITRAUM>_SOLAR` / `_LADEN` / `_ENTLADEN` / `_SOLAR_HAUS` / `_EINSP` / `_NETZ` / `_HAUS` / `_BAT_HAUS`
-* `STAT_SBx_<ZEITRAUM>_SOLAR` / `_LADEN` / `_ENTLADEN` (für `SB1` bis `SB4`)
+* **`v1.1.0`:**
+  * Central account configuration node (`anker-solix-config`) with dropdown selection and **server region selector (`EU` / `US-Global`)** for worldwide compatibility.
+  * Automatic multi-instance start offset (`0–1,500 ms`) when triggering multiple nodes from a single inject.
+  * Write commands via safe Read-Modify-Write (`set_mode`, `set_power`, `set_min_soc`, `set_grid_export`).
+* **`v2.0.x`:**
+  * Extended support for the wider Anker SOLIX ecosystem: **V1 Smart EV Charger (`A5191`)**, **SOLIX X1 Home Energy Storage**, and **portable power stations / backup units (`pps_info`)**.
 
 ---
 
-## Hinweise für OpenCCU & CCU-Historian
+### Legal Notice, Transparency & Disclaimer (English)
 
-* **Variablentyp in OpenCCU:** Alle Systemvariablen als **Zahl (Gleitkommazahl)** anlegen und das Maximum hoch genug wählen (z. B. `999999` für Jahreswerte).
-* **CCU-Historian:** Statistik-Systemvariablen in der Historian-Datenpunkt-Konfiguration auf **Deaktiviert** setzen. Für Live-Werte empfiehlt sich in der `ccu-historian.config` der Eintrag `devices.device1.sysvarCycle=5000`.
-
----
-
-## Versionshistorie (Changelog)
-
-* **v1.0.18**
-  * Bugfix 
-* **v1.0.17**
-  * Bugfix 
-* **v1.0.16**
-  * Bugfix 
-* **v1.0.15** 
-  * Zufalls-Jitter 3,5–7 Min., Smart-Meter-Master-Erkennung für alle Anker Smart Meter, Akkuschutz & set_wakeup für Einzelanlagen.
-* **v1.0.14**
-  * Bugfix 
-* **v1.0.11**
-  * Screenshots (`flow.png` und `config.png`) sowie detaillierte Hardware-Kompatibilitätsregeln (Power Dock, Solarbank 2/3, Solarbank 4 DIY-Parallelmodus) in der Dokumentation ergänzt.
-* **v1.0.6**
-  * **3 Ausgänge:** Ausgang 1 für gefilterte OpenCCU-Systemvariablen (`rbe`), Ausgang 2 für die kompletten Cloud-Rohdaten (`get_scen_info`), Ausgang 3 für Status- und Debug-Meldungen.
-  * **Gezielter `SITE_ID`-Abruf (`get_sites`):** Sendet bei `msg.topic = "get_sites"` sofort alle im Konto verfügbaren Anlagen (`Name` & `SITE_ID`) an Ausgang 3 und das Debug-Fenster.
-  * **Solarbank-Fallback für MQTT-Wakeup:** Unterstützt jetzt auch Einzelanlagen ohne Power Dock vollautomatisch mit dem 4-Minuten-Echtzeit-Trigger.
-  * **Beispielflow:** Fertiger Flow unter *Menü > Import > Beispiele* hinzugefügt.
-* **v1.0.0**
-  * Erstveröffentlichung mit ECDH-Login, 4-Minuten-MQTT-Wakeup, gestaffelter Statistik-Abfrage und OpenCCU-SysVar-Zuordnung.
+* **Unofficial Community Project:** This Node-RED package (`node-red-contrib-anker-solix`) is an independent open-source community project and is **not affiliated with, endorsed, or supported by Anker Innovations Limited or Anker SOLIX**. All product names and trademarks belong to their respective owners.
+* **Transparency & Development:** Conception, architecture, practical testing, and maintenance are provided by the project author; code generation was assisted by AI (**Google Gemini**).
+* **Use at Your Own Risk:** Provided under the **MIT License** without warranty of any kind. Using the unofficial cloud interface is at your own risk. The author assumes no liability for temporary account restrictions, data loss, battery discharge, or damages resulting from the use of this node or changes to the Anker API.
+* **Privacy:** Email address and password are stored exclusively locally in Node-RED's encrypted credential storage (`flows_cred.json`) and transmitted only to official Anker EU servers.
 
 ---
 
-## Lizenz
+## 🇩🇪 Kurzübersicht (Deutsch)
 
-MIT
+Node-RED-Baustein zum Auslesen von Echtzeit- und Statistikdaten für **Anker SOLIX Solar- & Speichersysteme** (Solarbank 2 E1600 Pro/Plus, Solarbank 3 E2700 Pro, Solarbank Max `AE111`, Solarbank Max AC `A17E2`/`B17E2`, Power Dock `AE100` sowie Anker Smart Meter) über die **Anker EU-Cloud**.
+
+* **Universeller Ausgang 1 (`{ topic, payload }`):** Sendet Werte bei Änderung direkt an **OpenCCU / HomeMatic** (`ccu-sysvar`), **MQTT-Broker** (`mqtt out` für Home Assistant / ioBroker), **InfluxDB** oder **KNX / Loxone**.
+* **Intelligente Hardware-Erkennung & Akkuschutz:** Erkennt Power Dock (`AE100`), Anker Smart Meter (`A17X7`, `A17X8`, `AE1X0`, `AE1R0`, `SHEM3`) und 230V-Heimspeicher (`AE111`, `A17E2`, `B17E2`) automatisch für lückenlose Echtzeitdaten, während reine Solarbank-Anlagen nachts im akkuschonenden Schlafmodus bleiben.
+* **EU-Cloud-Unterstützung:** Funktioniert mit allen europäischen Anker-SOLIX-Konten (`://anker.com`).
+
+👉 **[Zur vollständigen deutschen Anleitung (Installation, Systemvariablen, MQTT & Steuerbefehle)]("https://" + "://github.com")**
+
+### Rechtliche Hinweise, Transparenz & Haftungsausschluss (Deutsch)
+
+* **Unabhängiges Community-Projekt:** Dieses Node-RED-Paket (`node-red-contrib-anker-solix`) ist ein privates Open-Source-Projekt und steht in **keiner Verbindung zu Anker Innovations Limited oder Anker SOLIX**. Alle genannten Marken- und Produktnamen sind Eigentum der jeweiligen Rechteinhaber.
+* **Transparenz & Entstehung:** Konzeption, Architektur, Praxistests und Pflege stammen vom Projektautor; die Code-Erstellung erfolgte mit KI-Unterstützung (**Google Gemini**).
+* **Nutzung auf eigene Gefahr:** Die Bereitstellung erfolgt unter der **MIT-Lizenz** ohne jegliche Gewährleistung. Die Nutzung der inoffiziellen Cloud-Schnittstelle erfolgt auf eigenes Risiko. Der Autor übernimmt keine Haftung für temporäre Kontosperrungen, Datenverluste, Akku-Entladungen oder Schäden, die durch die Nutzung dieses Bausteins oder durch Änderungen an der Anker-API entstehen.
+* **Datenschutz:** E-Mail-Adresse und Passwort werden ausschließlich lokal im verschlüsselten Credential-Speicher deiner Node-RED-Instanz (`flows_cred.json`) abgelegt und nur für die direkte Authentifizierung bei den EU-Servern von Anker verwendet.
