@@ -37,7 +37,7 @@ Importiere anschließend den fertigen Beispielflow über **Node-RED Menü > Impo
 
 * **Einzelne Anlage (`ms_type === 1`):** Lasse das Feld `SITE_ID (optional)` leer. Der Baustein erkennt deine Hauptanlage automatisch und speichert die ID lokal zwischen.
 * **Seriennummern der Geräte:** Lasse `Wakeup SN/PN` und `Solarbank 1–4 SN` für die automatische Erkennung leer oder trage gezielt Seriennummern ein, um die Auto-Erkennung zu überschreiben.
-* **Hinweis zur Einzel-Sitzung (App vs. Node-RED):** Anker erlaubt pro Konto nur eine aktive Anmeldung gleichzeitig. Wenn du dich mit demselben Konto in der Smartphone-App anmeldest, wird Node-RED kurzzeitig abgemeldet (der Baustein loggt sich automatisch neu ein). Lege dir am besten ein kostenloses Zweitkonto in der Anker-App an und gib deine Anlage dafür frei, um App und Node-RED parallel zu nutzen.
+* **Konten-Empfehlung (Zweitkonto vs. Hauptkonto):** Für das reine Auslesen von Live- und Statistikdaten wird weiterhin ein kostenloses, geteiltes **Zweitkonto** empfohlen (maximale Sicherheit und saubere Trennung). Das **Hauptkonto (Eigentümer)** ist nur dann erforderlich, wenn später (ab `v1.1.0`) Schreibbefehle / Steuerungen an die Anlage gesendet werden sollen. Anker erlaubt inzwischen parallele Logins von Smartphone-App und Node-RED gleichzeitig.
 
 ![Baustein Konfiguration](images/node-config.png)
 
@@ -59,18 +59,19 @@ Wenn du **zwei oder mehr Anlagen** abfragen möchtest (z. B. eine zweite eigene 
 
 Anker SOLIX Solarbanks wechseln nachts in einen **Tiefschlafmodus (Sleep Mode)**, sobald der Akku die eingestellte Entladegrenze (`Reserve-SOC`, z. B. `5 %` oder `10 %`) erreicht, und wachen erst morgens wieder auf, sobald Solarstrom anliegt. Würde man eine reine Solarbank nachts per Cloud aufwecken, würde ihr Akku unnötig entladen.
 
-* **Anlagen mit Power Dock (`AE100`), Anker Smart Meter (`A17X7`, `A17X8`, `AE1X0`, `AE1R0`, `SHEM3`) oder 230V-Heimspeicher (`AE111`, `A17E2`, `B17E2`):** Diese Geräte hängen dauerhaft am 230V-Hausnetz. Der Baustein nutzt sie automatisch als Wakeup-Master (`cmd: 17` mit Zufalls-Jitter `3,5–7 Min.`) für lückenlose 5-Sekunden-Echtzeitdaten, während verbundene Solarbanks sicher ruhen dürfen.
+* **Anlagen mit Power Dock (`AE100`), Anker Smart Meter (`A17X7`, `A17X8`, `AE1X0`, `AE1R0`, `SHEM3`) oder 230V-Heimspeicher (`AE111`, `A17E2`, `B17E2`):** Diese Geräte hängen dauerhaft am 230V-Hausnetz. Der Baustein nutzt sie automatisch als Wakeup-Master (`cmd: 17` mit Zufalls-Jitter `3–4 Min.` sowie automatischem Stillstands-Re-Trigger nach 90 Sekunden) für lückenlose 5-Sekunden-Echtzeitdaten, während verbundene Solarbanks sicher ruhen dürfen.
 * **Reine Solarbank-Anlagen (ohne Power Dock / Anker Smart Meter):** Der Baustein schaltet den MQTT-Wakeup ab Werk automatisch aus (`OK (Akkuschutz: Wakeup aus)`).
-* **Manuelle Wakeup-Steuerung (`set_wakeup`):** Du kannst den Echtzeit-Wakeup jederzeit im laufenden Betrieb über eine Eingangsnachricht steuern:
+* **Steuer-Topics im laufenden Betrieb:**
   * `msg.topic = "set_wakeup"`, `msg.payload = true` (Wakeup einschalten, z. B. tagsüber per Astro-Zeitplan)
   * `msg.topic = "set_wakeup"`, `msg.payload = false` (Wakeup ausschalten)
   * `msg.topic = "set_wakeup"`, `msg.payload = "auto"` (zurück zur automatischen Hardware-Erkennung)
+  * `msg.topic = "get_stats"` (Energie-Statistiken in `kWh` sofort abrufen, ohne auf das 300-Sekunden-Intervall zu warten)
 
 ---
 
 ## Ausgang 1: Universelles Nachrichtenformat & Smart-Home-Beispiele
 
-Für jeden in der JSON-Konfiguration belegten Schlüssel (und nur bei tatsächlicher Wertänderung) sendet **Ausgang 1** eine standardisierte Node-RED-Nachricht:
+Für jeden in der JSON-Konfiguration belegten Schlüssel sendet **Ausgang 1** bei Wertänderung – sowie alle **300 Sekunden** als Stützpunkt (verhindert Spline-Wellen in CCU-Historian bei Konstantphasen) – eine standardisierte Node-RED-Nachricht:
 
 ```json
 {
@@ -78,6 +79,8 @@ Für jeden in der JSON-Konfiguration belegten Schlüssel (und nur bei tatsächli
   "payload": 1245
 }
 ```
+
+*(Hinweis: **Ausgang 2** liefert zusätzlich die ungefilterten Rohdaten der API als JSON-Objekte mit `msg.topic = "scen_info"` bzw. `msg.topic = "energy_analysis"`.)*
 
 ![SysVars JSON Konfiguration](images/sysvars-config.png)
 
@@ -254,7 +257,7 @@ Für jeden in der JSON-Konfiguration belegten Schlüssel (und nur bei tatsächli
 * `SBX_TEMP` (°C): Akkutemperatur der Solarbank X
 * `SBX_PV1` .. `SBX_PV4` (W): Einzelleistung der PV-Eingänge 1–4
 
-### Energie-Statistiken Gesamt (4 Zeiträume × 8 = 32 Werte)
+### Energie-Statistiken Gesamt (4 Zeiträume × 8 = 32 Werte, Einheit: `kWh`)
 *(Ersetze `ZEITRAUM` durch `TAG`, `WOCHE`, `MONAT` oder `JAHR`)*
 * `STAT_GES_ZEITRAUM_SOLAR` (kWh): Gesamter Solarertrag
 * `STAT_GES_ZEITRAUM_LADEN` (kWh): In den Akku geladene Energie
@@ -265,7 +268,7 @@ Für jeden in der JSON-Konfiguration belegten Schlüssel (und nur bei tatsächli
 * `STAT_GES_ZEITRAUM_HAUS` (kWh): Gesamter Hausverbrauch
 * `STAT_GES_ZEITRAUM_BAT_HAUS` (kWh): Aus dem Akku gedeckter Hausverbrauch
 
-### Energie-Statistiken Einzel-Solarbanks 1–4 (4 Bänke × 4 Zeiträume × 3 = 48 Werte)
+### Energie-Statistiken Einzel-Solarbanks 1–4 (4 Bänke × 4 Zeiträume × 3 = 48 Werte, Einheit: `kWh`)
 *(Ersetze `X` durch `1`–`4` und `ZEITRAUM` durch `TAG`, `WOCHE`, `MONAT` oder `JAHR`)*
 * `STAT_SBX_ZEITRAUM_SOLAR` (kWh): Solarertrag der Solarbank X
 * `STAT_SBX_ZEITRAUM_LADEN` (kWh): Geladene Energie der Solarbank X
@@ -277,4 +280,4 @@ Für jeden in der JSON-Konfiguration belegten Schlüssel (und nur bei tatsächli
 
 Lückenlose 5-Sekunden-Echtzeitaufzeichnung im CCU-Historian ohne Cloud-Wellen:
 
-![CCU Historian Verlauf](images/historian-chart.png)
+![CCU Historian Chart](images/historian-chart.png)

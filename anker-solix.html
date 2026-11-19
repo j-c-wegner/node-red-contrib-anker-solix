@@ -157,7 +157,7 @@
         outputs: 3,
         outputLabels: [
             "OpenCCU SysVar / Universal ({ topic, payload })",
-            "Cloud Rohdaten (scen_info)",
+            "Cloud Rohdaten (scen_info & energy_analysis)",
             "System / Fehler / SITE_IDs"
         ],
         icon: "font-awesome/fa-sun-o",
@@ -220,16 +220,17 @@
 </script>
 
 <script type="text/html" data-help-name="anker-solix">
-    <p>Liest Live- und Statistikdaten von <b>Anker SOLIX Solar- &amp; Speichersystemen</b> (Solarbank 2/3, Solarbank Max / Max AC, Power Dock AE100, Smart Meter) aus der EU-Cloud aus.</p>
+    <p>Liest Live-Daten (<code>W</code>, <code>%</code>, <code>°C</code>) und Energie-Statistiken (<code>kWh</code>) von <b>Anker SOLIX Solar- &amp; Speichersystemen</b> (Solarbank 2/3, Solarbank Max / Max AC, Power Dock AE100, Smart Meter) aus der EU-Cloud aus.</p>
     <h3>Ausgänge</h3>
     <ol>
-        <li><b>Universal-Ausgang (<code>{ topic, payload }</code>):</b> Sendet nur bei Wertänderung an OpenCCU (<code>ccu-sysvar</code>), MQTT-Broker (<code>mqtt out</code>), InfluxDB oder KNX/Loxone.</li>
-        <li><b>Cloud Rohdaten:</b> Vollständiges <code>scen_info</code>-Objekt zur freien Weiterverarbeitung.</li>
+        <li><b>Universal-Ausgang (<code>{ topic, payload }</code>):</b> Sendet bei Wertänderung sowie alle 300 Sekunden als Stützpunkt an OpenCCU (<code>ccu-sysvar</code>), MQTT-Broker (<code>mqtt out</code>), InfluxDB oder KNX/Loxone.</li>
+        <li><b>Cloud Rohdaten:</b> Vollständige JSON-Objekte (<code>scen_info</code> &amp; <code>energy_analysis</code>) zur freien Weiterverarbeitung.</li>
         <li><b>System / SITE_IDs:</b> Fehlermeldungen oder die Anlagenliste bei <code>msg.topic = "get_sites"</code>.</li>
     </ol>
     <h3>Steuerbefehle (Eingang)</h3>
     <ul>
         <li><code>msg.topic = "get_sites"</code>: Listet alle verfügbaren Anlagen (<code>SITE_ID</code>) an Ausgang 3 auf.</li>
+        <li><code>msg.topic = "get_stats"</code>: Ruft die Energie-Statistiken (<code>kWh</code>) sofort ab, ohne auf das 300-Sekunden-Intervall zu warten.</li>
         <li><code>msg.topic = "set_wakeup"</code> mit <code>true</code>, <code>false</code> oder <code>"auto"</code>: Schaltet den MQTT-Echtzeit-Wakeup manuell ein, aus oder zurück auf Automatik.</li>
     </ul>
 </script>

@@ -37,7 +37,7 @@ Open the node properties and enter your **Anker SOLIX EU account credentials** (
 
 * **Single Site (`ms_type === 1`):** Leave `SITE_ID (optional)` empty. The node automatically detects and caches your main site.
 * **Hardware Serial Numbers:** Leave `Wakeup SN/PN` and `Solarbank 1–4 SN` empty for automatic discovery, or enter specific serial numbers to override auto-detection.
-* **Single Session Notice:** Anker only allows one active login session per account at the same time. Logging into the smartphone app with the same account will temporarily log out Node-RED (the node automatically re-authenticates). Create a free secondary Anker account and share your site with it if you want to use the app and Node-RED simultaneously.
+* **Account Recommendation (Secondary vs. Primary Account):** Using a free, shared **secondary Anker account** is recommended for read-only data monitoring (maximum security and clean separation). The **primary owner account** is only required starting with `v1.1.0` when sending write/control commands. Anker now supports parallel logins from the smartphone app and Node-RED simultaneously.
 
 ![Node Configuration](images/node-config.png)
 
@@ -59,18 +59,19 @@ If you monitor **two or more sites** (e.g., a second home or shared family syste
 
 Anker SOLIX solarbanks enter a **deep sleep mode** at night once the battery reaches its configured reserve SOC (`5%` or `10%`) and only wake up again when solar power is available in the morning. Sending cloud wake-up commands to a standalone solarbank at night would drain its battery unnecessarily.
 
-* **Systems with Power Dock (`AE100`), Anker Smart Meter (`A17X7`, `A17X8`, `AE1X0`, `AE1R0`, `SHEM3`), or AC Home Storage (`AE111`, `A17E2`, `B17E2`):** These devices are permanently powered by 230V mains. The node automatically uses them as the wake-up master (`cmd: 17` with randomized `3.5–7 min` jitter) for uninterrupted 5-second real-time data while letting connected solarbanks rest safely.
+* **Systems with Power Dock (`AE100`), Anker Smart Meter (`A17X7`, `A17X8`, `AE1X0`, `AE1R0`, `SHEM3`), or AC Home Storage (`AE111`, `A17E2`, `B17E2`):** These devices are permanently powered by 230V mains. The node automatically uses them as the wake-up master (`cmd: 17` with randomized `3–4 min` jitter and automatic 90-second stall re-trigger) for uninterrupted 5-second real-time data while letting connected solarbanks rest safely.
 * **Standalone Solarbank Systems (without Power Dock / Anker Smart Meter):** The node automatically disables MQTT wake-up by default (`OK (Akkuschutz: Wakeup aus)`).
-* **Manual Wake-Up Control (`set_wakeup`):** You can override the wake-up behavior at runtime via input message:
+* **Runtime Control Topics:**
   * `msg.topic = "set_wakeup"`, `msg.payload = true` (enable wake-up, e.g., during daytime via astro schedule)
   * `msg.topic = "set_wakeup"`, `msg.payload = false` (disable wake-up)
   * `msg.topic = "set_wakeup"`, `msg.payload = "auto"` (return to automatic hardware detection)
+  * `msg.topic = "get_stats"` (fetch energy statistics in `kWh` immediately without waiting for the 300-second interval)
 
 ---
 
 ## Output 1: Universal Message Format & Smart Home Examples
 
-For every key mapped in the JSON configuration (and only when its numeric value changes), **Output 1** emits a standard Node-RED message:
+For every key mapped in the JSON configuration, **Output 1** emits a standard Node-RED message whenever its numeric value changes — plus every **300 seconds** as a heartbeat data point (preventing spline wave interpolation in CCU-Historian during constant phases):
 
 ```json
 {
@@ -78,6 +79,8 @@ For every key mapped in the JSON configuration (and only when its numeric value 
   "payload": 1245
 }
 ```
+
+*(Note: **Output 2** additionally provides the raw API JSON payloads with `msg.topic = "scen_info"` and `msg.topic = "energy_analysis"`.)*
 
 ![SysVars JSON Configuration](images/sysvars-config.png)
 
@@ -254,7 +257,7 @@ For every key mapped in the JSON configuration (and only when its numeric value 
 * `SBX_TEMP` (°C): Battery temperature
 * `SBX_PV1` .. `SBX_PV4` (W): Individual MPPT string 1–4 power
 
-### Total Energy Statistics (4 Periods × 8 = 32 Keys)
+### Total Energy Statistics (4 Periods × 8 = 32 Keys, Unit: `kWh`)
 *(Replace `PERIOD` with `TAG`, `WOCHE`, `MONAT`, or `JAHR`)*
 * `STAT_GES_PERIOD_SOLAR` (kWh): Total solar yield
 * `STAT_GES_PERIOD_LADEN` (kWh): Total energy charged into battery
@@ -265,7 +268,7 @@ For every key mapped in the JSON configuration (and only when its numeric value 
 * `STAT_GES_PERIOD_HAUS` (kWh): Total home energy consumption
 * `STAT_GES_PERIOD_BAT_HAUS` (kWh): Home consumption supplied from battery
 
-### Individual Solarbanks 1–4 Statistics (4 Banks × 4 Periods × 3 = 48 Keys)
+### Individual Solarbanks 1–4 Statistics (4 Banks × 4 Periods × 3 = 48 Keys, Unit: `kWh`)
 *(Replace `X` with `1`–`4` and `PERIOD` with `TAG`, `WOCHE`, `MONAT`, or `JAHR`)*
 * `STAT_SBX_PERIOD_SOLAR` (kWh): Solar yield of Solarbank X
 * `STAT_SBX_PERIOD_LADEN` (kWh): Charged energy of Solarbank X
