@@ -12,7 +12,7 @@
 4. [Hardware-Erkennung, Schlafmodus & Akkuschutz](#hardware-erkennung-schlafmodus--akkuschutz)
 5. [Ausgang 1: Universelles Nachrichtenformat & Smart-Home-Beispiele](#ausgang-1-universelles-nachrichtenformat--smart-home-beispiele)
 6. [Kopierbare JSON-Vorlage](#kopierbare-json-vorlage)
-7. [Vollständige Übersicht aller 124 Datenpunkte](#vollständige-übersicht-aller-124-datenpunkte)
+7. [Vollständige Übersicht aller 120 Datenpunkte](#vollständige-übersicht-aller-120-datenpunkte)
 8. [Praxis-Ergebnis](#praxis-ergebnis)
 
 ---
@@ -106,42 +106,38 @@ Für jeden in der JSON-Konfiguration belegten Schlüssel sendet **Ausgang 1** be
   "PD_SOLAR": "",
   "PD_ENTLADEN": "",
   "PD_AUSGANG": "",
-  "_BEREICH_SB1": "--- SOLARBANK 1 LIVE (Einheit: W, % bzw. °C) ---",
+  "_BEREICH_SB1": "--- SOLARBANK 1 LIVE (Einheit: W bzw. %) ---",
   "SB1_SOC": "",
   "SB1_SOLAR": "",
   "SB1_LADEN": "",
   "SB1_OUTPUT": "",
-  "SB1_TEMP": "",
   "SB1_PV1": "",
   "SB1_PV2": "",
   "SB1_PV3": "",
   "SB1_PV4": "",
-  "_BEREICH_SB2": "--- SOLARBANK 2 LIVE (Einheit: W, % bzw. °C) ---",
+  "_BEREICH_SB2": "--- SOLARBANK 2 LIVE (Einheit: W bzw. %) ---",
   "SB2_SOC": "",
   "SB2_SOLAR": "",
   "SB2_LADEN": "",
   "SB2_OUTPUT": "",
-  "SB2_TEMP": "",
   "SB2_PV1": "",
   "SB2_PV2": "",
   "SB2_PV3": "",
   "SB2_PV4": "",
-  "_BEREICH_SB3": "--- SOLARBANK 3 LIVE (Einheit: W, % bzw. °C) ---",
+  "_BEREICH_SB3": "--- SOLARBANK 3 LIVE (Einheit: W bzw. %) ---",
   "SB3_SOC": "",
   "SB3_SOLAR": "",
   "SB3_LADEN": "",
   "SB3_OUTPUT": "",
-  "SB3_TEMP": "",
   "SB3_PV1": "",
   "SB3_PV2": "",
   "SB3_PV3": "",
   "SB3_PV4": "",
-  "_BEREICH_SB4": "--- SOLARBANK 4 LIVE (Einheit: W, % bzw. °C) ---",
+  "_BEREICH_SB4": "--- SOLARBANK 4 LIVE (Einheit: W bzw. %) ---",
   "SB4_SOC": "",
   "SB4_SOLAR": "",
   "SB4_LADEN": "",
   "SB4_OUTPUT": "",
-  "SB4_TEMP": "",
   "SB4_PV1": "",
   "SB4_PV2": "",
   "SB4_PV3": "",
@@ -233,10 +229,9 @@ Für jeden in der JSON-Konfiguration belegten Schlüssel sendet **Ausgang 1** be
   "STAT_SB4_JAHR_ENTLADEN": ""
 }
 ```
-
 ---
 
-## Vollständige Übersicht aller 124 Datenpunkte
+## Vollständige Übersicht aller 120 Datenpunkte
 
 ### Gesamtsystem / Power Dock Live (8 Werte)
 * `PD_HAUSLAST` (W): Aktuelle Hauslast
@@ -248,13 +243,12 @@ Für jeden in der JSON-Konfiguration belegten Schlüssel sendet **Ausgang 1** be
 * `PD_ENTLADEN` (W): Gesamte Entladeleistung
 * `PD_AUSGANG` (W): Gesamte Ausgangsleistung
 
-### Einzelne Solarbanks 1–4 Live (4 × 9 = 36 Werte)
+### Einzelne Solarbanks 1–4 Live (4 × 8 = 32 Werte)
 *(Ersetze `X` durch `1`, `2`, `3` oder `4`)*
 * `SBX_SOC` (%): Akkustand der Solarbank X
 * `SBX_SOLAR` (W): Gesamte Solarleistung der Solarbank X
 * `SBX_LADEN` (W): Ladeleistung der Solarbank X
 * `SBX_OUTPUT` (W): Ausgangsleistung der Solarbank X
-* `SBX_TEMP` (°C): Akkutemperatur der Solarbank X
 * `SBX_PV1` .. `SBX_PV4` (W): Einzelleistung der PV-Eingänge 1–4
 
 ### Energie-Statistiken Gesamt (4 Zeiträume × 8 = 32 Werte, Einheit: `kWh`)

@@ -12,7 +12,7 @@
 4. [Hardware Auto-Detection, Sleep Mode & Battery Protection](#hardware-auto-detection-sleep-mode--battery-protection)
 5. [Output 1: Universal Message Format & Smart Home Examples](#output-1-universal-message-format--smart-home-examples)
 6. [Copy-Pasteable JSON Template](#copy-pasteable-json-template)
-7. [Complete Reference of All 124 Data Keys](#complete-reference-of-all-124-data-keys)
+7. [Complete Reference of All 120 Data Keys](#complete-reference-of-all-120-data-keys)
 8. [Real-World Result](#real-world-result)
 
 ---
@@ -106,42 +106,38 @@ For every key mapped in the JSON configuration, **Output 1** emits a standard No
   "PD_SOLAR": "",
   "PD_ENTLADEN": "",
   "PD_AUSGANG": "",
-  "_BEREICH_SB1": "--- SOLARBANK 1 LIVE (W / % / °C) ---",
+  "_BEREICH_SB1": "--- SOLARBANK 1 LIVE (W / %) ---",
   "SB1_SOC": "",
   "SB1_SOLAR": "",
   "SB1_LADEN": "",
   "SB1_OUTPUT": "",
-  "SB1_TEMP": "",
   "SB1_PV1": "",
   "SB1_PV2": "",
   "SB1_PV3": "",
   "SB1_PV4": "",
-  "_BEREICH_SB2": "--- SOLARBANK 2 LIVE (W / % / °C) ---",
+  "_BEREICH_SB2": "--- SOLARBANK 2 LIVE (W / %) ---",
   "SB2_SOC": "",
   "SB2_SOLAR": "",
   "SB2_LADEN": "",
   "SB2_OUTPUT": "",
-  "SB2_TEMP": "",
   "SB2_PV1": "",
   "SB2_PV2": "",
   "SB2_PV3": "",
   "SB2_PV4": "",
-  "_BEREICH_SB3": "--- SOLARBANK 3 LIVE (W / % / °C) ---",
+  "_BEREICH_SB3": "--- SOLARBANK 3 LIVE (W / %) ---",
   "SB3_SOC": "",
   "SB3_SOLAR": "",
   "SB3_LADEN": "",
   "SB3_OUTPUT": "",
-  "SB3_TEMP": "",
   "SB3_PV1": "",
   "SB3_PV2": "",
   "SB3_PV3": "",
   "SB3_PV4": "",
-  "_BEREICH_SB4": "--- SOLARBANK 4 LIVE (W / % / °C) ---",
+  "_BEREICH_SB4": "--- SOLARBANK 4 LIVE (W / %) ---",
   "SB4_SOC": "",
   "SB4_SOLAR": "",
   "SB4_LADEN": "",
   "SB4_OUTPUT": "",
-  "SB4_TEMP": "",
   "SB4_PV1": "",
   "SB4_PV2": "",
   "SB4_PV3": "",
@@ -233,10 +229,9 @@ For every key mapped in the JSON configuration, **Output 1** emits a standard No
   "STAT_SB4_JAHR_ENTLADEN": ""
 }
 ```
-
 ---
 
-## Complete Reference of All 124 Data Keys
+## Complete Reference of All 120 Data Keys
 
 ### System / Power Dock Live (8 Keys)
 * `PD_HAUSLAST` (W): Current home power consumption
@@ -248,13 +243,12 @@ For every key mapped in the JSON configuration, **Output 1** emits a standard No
 * `PD_ENTLADEN` (W): Total battery discharging power
 * `PD_AUSGANG` (W): Total system AC output power
 
-### Individual Solarbanks 1–4 Live (4 × 9 = 36 Keys)
+### Individual Solarbanks 1–4 Live (4 × 8 = 32 Keys)
 *(Replace `X` with `1`, `2`, `3`, or `4`)*
 * `SBX_SOC` (%): Battery state of charge
 * `SBX_SOLAR` (W): Total solar input power
 * `SBX_LADEN` (W): Battery charging power
 * `SBX_OUTPUT` (W): AC output power
-* `SBX_TEMP` (°C): Battery temperature
 * `SBX_PV1` .. `SBX_PV4` (W): Individual MPPT string 1–4 power
 
 ### Total Energy Statistics (4 Periods × 8 = 32 Keys, Unit: `kWh`)

@@ -70,7 +70,6 @@ module.exports = function(RED) {
                     node.send([{ topic: svName, payload: val }, null, null]);
                 }
             }
-
             function req(path, bodyObj, hdrs) {
                 return new Promise(function(resolve, reject) {
                     const bodyStr = JSON.stringify(bodyObj);
@@ -116,6 +115,7 @@ module.exports = function(RED) {
                 const pn = String(dev.device_pn || "").toUpperCase();
                 return ["AE111", "A17E2", "B17E2"].indexOf(pn) !== -1;
             }
+
             function triggerMqttWakeup(session, devSn, devPn, modeLabel, authHdrs, forceWake) {
                 const now = Date.now();
                 const wakeKey = "anker_wakeup_" + EMAIL.replace(/[^a-zA-Z0-9]/g, "_") + "_" + devSn;
@@ -299,7 +299,6 @@ module.exports = function(RED) {
                             }
                         }
                     }
-
                     if (!SITE_ID) {
                         node.status({ fill: "red", shape: "dot", text: "Keine SITE_ID gefunden" });
                         return;
@@ -321,13 +320,16 @@ module.exports = function(RED) {
 
                     const scen = scenRes.data;
                     node.send([null, { topic: "scen_info", payload: scen }, null]);
+
                     if (!manualSn && (!DEVICE_SN || !WAKEUP_MODE)) {
+                        const cbList = (scen.combiner_box_info && scen.combiner_box_info.combiner_box_list) || [];
                         const pdList = (scen.powerdock_info && scen.powerdock_info.powerdock_list) || [];
                         const gridList = (scen.grid_info && scen.grid_info.grid_list) || [];
                         const sbList = (scen.solarbank_info && scen.solarbank_info.solarbank_list) || [];
                         const ppsList = (scen.pps_info && scen.pps_info.pps_list) || [];
 
-                        let foundPd = pdList.find(function(x) { return String(x.device_pn || "").toUpperCase() === "AE100"; })
+                        let foundPd = cbList.find(function(x) { return String(x.device_pn || "").toUpperCase() === "AE100"; })
+                                   || pdList.find(function(x) { return String(x.device_pn || "").toUpperCase() === "AE100"; })
                                    || sbList.find(function(x) { return String(x.device_pn || "").toUpperCase() === "AE100"; });
                         let foundMeter = gridList.find(isAnkerSmartMeter) || sbList.find(isAnkerSmartMeter);
                         let foundAcStorage = sbList.find(isAcHomeStorage) || ppsList.find(isAcHomeStorage);
@@ -367,7 +369,6 @@ module.exports = function(RED) {
                             for (let i = 0; i < 4; i++) { SOLARBANKS[i] = autoSbs[i] || ""; }
                         }
                     }
-
                     const liveSig = String(scen.home_load_power) + "|" + String(scen.grid_info && scen.grid_info.grid_to_home_power) + "|" + String(scen.solarbank_info && scen.solarbank_info.total_photovoltaic_power);
                     const lastLiveSig = context.get("lastLiveSig") || "";
                     let lastLiveChange = context.get("lastLiveChange") || Date.now();
@@ -400,6 +401,7 @@ module.exports = function(RED) {
                     if (shouldWakeup && DEVICE_SN) {
                         wakeupStatus = triggerMqttWakeup(s, DEVICE_SN, DEVICE_PN, WAKEUP_MODE || "Auto", authHdrs, isStalled);
                     }
+
                     if (scen.home_load_power !== undefined) { emitSysVar("PD_HAUSLAST", Number(scen.home_load_power)); }
                     if (scen.grid_info) {
                         if (scen.grid_info.grid_to_home_power !== undefined) { emitSysVar("PD_NETZ_BEZUG", Number(scen.grid_info.grid_to_home_power)); }
@@ -427,7 +429,6 @@ module.exports = function(RED) {
                             if (sb.photovoltaic_power !== undefined && sb.photovoltaic_power !== "") { emitSysVar(pfx + "SOLAR", Number(sb.photovoltaic_power)); }
                             if (sb.charging_power !== undefined && sb.charging_power !== "") { emitSysVar(pfx + "LADEN", Number(sb.charging_power)); }
                             if (sb.output_power !== undefined && sb.output_power !== "") { emitSysVar(pfx + "OUTPUT", Number(sb.output_power)); }
-                            if (sb.temperature !== undefined && sb.temperature !== "") { emitSysVar(pfx + "TEMP", Number(sb.temperature)); }
                             if (sb.pv_power) {
                                 if (sb.pv_power.pv1 !== undefined) { emitSysVar(pfx + "PV1", Number(sb.pv_power.pv1)); }
                                 if (sb.pv_power.pv2 !== undefined) { emitSysVar(pfx + "PV2", Number(sb.pv_power.pv2)); }
@@ -440,14 +441,14 @@ module.exports = function(RED) {
                             if (sb.solar_power_4 !== undefined) { emitSysVar(pfx + "PV4", Number(sb.solar_power_4)); }
                         }
                     }
-
                     const lastStatFetch = context.get("lastStatFetch") || 0;
                     if (isGetStats || (Date.now() - lastStatFetch > 300000)) {
                         context.set("lastStatFetch", Date.now());
                         const dNow = new Date();
                         const pad = function(n) { return n < 10 ? "0" + n : "" + n; };
                         const todayStr = dNow.getFullYear() + "-" + pad(dNow.getMonth() + 1) + "-" + pad(dNow.getDate());
-                        const yearStartStr = dNow.getFullYear() + "-01-01";
+                        const monthStr = dNow.getFullYear() + "-" + pad(dNow.getMonth() + 1);
+                        const yearStr = "" + dNow.getFullYear();
                         const dWeekStart = new Date(dNow.getFullYear(), dNow.getMonth(), dNow.getDate());
                         const dayOfWeek = dWeekStart.getDay();
                         dWeekStart.setDate(dWeekStart.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
@@ -456,8 +457,8 @@ module.exports = function(RED) {
                         const types = [
                             { type: "day", pfx: "TAG_", start: todayStr, end: todayStr },
                             { type: "week", pfx: "WOCHE_", start: weekStartStr, end: todayStr },
-                            { type: "month", pfx: "MONAT_", start: yearStartStr, end: todayStr },
-                            { type: "year", pfx: "JAHR_", start: yearStartStr, end: todayStr }
+                            { type: "month", pfx: "MONAT_", start: monthStr, end: "" },
+                            { type: "year", pfx: "JAHR_", start: yearStr, end: "" }
                         ];
 
                         const statRawOut = {};
@@ -479,17 +480,7 @@ module.exports = function(RED) {
 
                             statRawOut[tp.type] = mergedGes;
 
-                            const p = "STAT_GES_" + tp.pfx;
-                            if (mergedGes.solar_total !== undefined && mergedGes.solar_total !== "") { emitSysVar(p + "SOLAR", Number(mergedGes.solar_total)); }
-                            if (mergedGes.charge_total !== undefined && mergedGes.charge_total !== "") { emitSysVar(p + "LADEN", Number(mergedGes.charge_total)); }
-                            if (mergedGes.discharge_total !== undefined && mergedGes.discharge_total !== "") { emitSysVar(p + "ENTLADEN", Number(mergedGes.discharge_total)); }
-                            if (mergedGes.solar_to_home_total !== undefined && mergedGes.solar_to_home_total !== "") { emitSysVar(p + "SOLAR_HAUS", Number(mergedGes.solar_to_home_total)); }
-                            if (mergedGes.grid_to_home_total !== undefined && mergedGes.grid_to_home_total !== "") { emitSysVar(p + "NETZ", Number(mergedGes.grid_to_home_total)); }
-                            if (mergedGes.home_usage_total !== undefined && mergedGes.home_usage_total !== "") { emitSysVar(p + "HAUS", Number(mergedGes.home_usage_total)); }
-                            if (mergedGes.battery_to_home_total !== undefined && mergedGes.battery_to_home_total !== "") { emitSysVar(p + "BAT_HAUS", Number(mergedGes.battery_to_home_total)); }
-                            if (mergedGes.grid_out_total !== undefined && mergedGes.grid_out_total !== "") { emitSysVar(p + "EINSP", Number(mergedGes.grid_out_total)); }
-                            if (mergedGes.photovoltaic_to_grid_total !== undefined && mergedGes.photovoltaic_to_grid_total !== "") { emitSysVar(p + "EINSP", Number(mergedGes.photovoltaic_to_grid_total)); }
-
+                            const sbDataList = [];
                             for (let sIdx = 0; sIdx < 4; sIdx++) {
                                 const sbSn = SOLARBANKS[sIdx];
                                 if (!sbSn) { continue; }
@@ -499,6 +490,7 @@ module.exports = function(RED) {
                                 }, authHdrs);
                                 if (stSb && stSb.code === 0 && stSb.data) {
                                     const dS = stSb.data;
+                                    sbDataList.push(dS);
                                     statRawOut[tp.type + "_sb" + (sIdx + 1)] = dS;
                                     const pS = "STAT_SB" + (sIdx + 1) + "_" + tp.pfx;
                                     if (dS.solar_total !== undefined && dS.solar_total !== "") { emitSysVar(pS + "SOLAR", Number(dS.solar_total)); }
@@ -506,6 +498,38 @@ module.exports = function(RED) {
                                     if (dS.discharge_total !== undefined && dS.discharge_total !== "") { emitSysVar(pS + "ENTLADEN", Number(dS.discharge_total)); }
                                 }
                             }
+                            const sbMain = sbDataList[0] || {};
+                            const pickVal = function(key) {
+                                if (mergedGes[key] !== undefined && mergedGes[key] !== "") { return Number(mergedGes[key]); }
+                                if (sbMain[key] !== undefined && sbMain[key] !== "") { return Number(sbMain[key]); }
+                                return null;
+                            };
+
+                            const p = "STAT_GES_" + tp.pfx;
+                            const valSolar = pickVal("solar_total");
+                            const valLaden = pickVal("charge_total");
+                            const valEntladen = pickVal("discharge_total");
+                            const valSolarHaus = pickVal("solar_to_home_total");
+                            const valNetz = pickVal("grid_to_home_total");
+                            const valBatHaus = pickVal("battery_to_home_total");
+
+                            let valEinsp = pickVal("grid_out_total");
+                            if (valEinsp === null) { valEinsp = pickVal("photovoltaic_to_grid_total"); }
+                            if (valEinsp === null) { valEinsp = pickVal("solar_to_grid_total"); }
+
+                            let valHaus = pickVal("home_usage_total");
+                            if (valHaus === null && (valNetz !== null || valSolarHaus !== null || valBatHaus !== null)) {
+                                valHaus = Number(((valNetz || 0) + (valSolarHaus || 0) + (valBatHaus || 0)).toFixed(2));
+                            }
+
+                            if (valSolar !== null) { emitSysVar(p + "SOLAR", valSolar); }
+                            if (valLaden !== null) { emitSysVar(p + "LADEN", valLaden); }
+                            if (valEntladen !== null) { emitSysVar(p + "ENTLADEN", valEntladen); }
+                            if (valSolarHaus !== null) { emitSysVar(p + "SOLAR_HAUS", valSolarHaus); }
+                            if (valEinsp !== null) { emitSysVar(p + "EINSP", valEinsp); }
+                            if (valNetz !== null) { emitSysVar(p + "NETZ", valNetz); }
+                            if (valHaus !== null) { emitSysVar(p + "HAUS", valHaus); }
+                            if (valBatHaus !== null) { emitSysVar(p + "BAT_HAUS", valBatHaus); }
                         }
 
                         node.send([null, { topic: "energy_analysis", payload: statRawOut }, null]);

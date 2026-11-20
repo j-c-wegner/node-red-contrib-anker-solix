@@ -10,13 +10,13 @@
 
 ## 🇬🇧 Overview (English)
 
-Node-RED node to read real-time data (`W`, `%`, `°C`) and energy statistics (`kWh`) from **Anker SOLIX Solar & Energy Storage Systems** (Solarbank 2 E1600 Pro/Plus, Solarbank 3 E2700 Pro, Solarbank Max `AE111`, Solarbank Max AC `A17E2`/`B17E2`, Power Dock `AE100`, and Anker Smart Meters) via the **Anker EU Cloud**.
+Node-RED node to read real-time data (`W`, `%`) and energy statistics (`kWh`) from **Anker SOLIX Solar & Energy Storage Systems** (Solarbank 2 E1600 Pro/Plus, Solarbank 3 E2700 Pro, Solarbank Max `AE111`, Solarbank Max AC `A17E2`/`B17E2`, Power Dock `AE100`, and Anker Smart Meters) via the **Anker EU Cloud**.
 
 * **Universal Output 1 (`{ topic, payload }`):** Sends delta-filtered values (with a 300-second heartbeat for flatline-free charts in CCU-Historian / InfluxDB) directly to **OpenCCU / HomeMatic** (`ccu-sysvar`), **MQTT Brokers** (`mqtt out` for Home Assistant / ioBroker), **InfluxDB**, or **KNX / Loxone**.
 * **Raw JSON Output 2 (`scen_info` & `energy_analysis`):** Provides full API payloads for custom processing, debugging, or direct database logging.
 * **Smart Hardware Auto-Detection & Battery Protection:** Automatically detects Power Dock (`AE100`), Anker Smart Meters (`A17X7`, `A17X8`, `AE1X0`, `AE1R0`, `SHEM3`), and AC-coupled home storage (`AE111`, `A17E2`, `B17E2`) for continuous 24/7 real-time updates, while keeping standalone solarbanks in battery-safe sleep mode at night.
 * **Account Recommendation:** Using a shared **secondary Anker account** is recommended for read-only data monitoring (maximum security and clean separation); the **primary owner account** is only required starting with `v1.1.0` when sending write/control commands (Anker now supports parallel logins from the smartphone app and Node-RED simultaneously).
-* **EU Cloud Support:** Works with all European Anker SOLIX accounts (`://anker.com`).
+* **EU Cloud Support:** Works with all European Anker SOLIX accounts (`https://anker.com`).
 
 ### Visual Quick Start
 
@@ -30,6 +30,10 @@ Node-RED node to read real-time data (`W`, `%`, `°C`) and energy statistics (`k
 
 ### Changelog
 
+* **`v1.0.27`:**
+  * Fixed monthly and yearly `energy_analysis` statistics (`STAT_GES_MONAT_*` & `STAT_GES_JAHR_*`), mapped total solar/battery yields from solarbank statistics on Power Dock (`AE100`) setups, and added automatic fallback calculation for total home usage (`STAT_GES_*_HAUS`).
+  * Added primary `AE100` Power Dock auto-detection via `combiner_box_info.combiner_box_list`.
+  * Removed unsupported `SB1_TEMP`–`SB4_TEMP` keys for 120 clean, reliable data points and fixed documentation links.
 * **`v1.0.26`:**
   * Extended `energy_analysis` statistics queries across `"solar_production"`, `"home_usage"`, and `"grid"` so Power Dock (`AE100`) and Smart Meter systems reliably report grid import (`STAT_GES_*_NETZ`), home usage (`STAT_GES_*_HAUS`), and export (`STAT_GES_*_EINSP`) in `kWh`.
   * Fixed weekly statistics start date calculation (Monday of the current week) and added raw `energy_analysis` JSON output on Output 2 plus `msg.topic = "get_stats"` on-demand refresh.
@@ -54,9 +58,9 @@ Node-RED node to read real-time data (`W`, `%`, `°C`) and energy statistics (`k
 ### Planned Roadmap (Unbinding / Subject to Change)
 
 * **`v1.1.0`:**
-  * Central account configuration node (`anker-solix-config`) with dropdown selection and **server region selector (`EU` / `US-Global`)** for worldwide compatibility.
+  * Central account configuration node (`anker-solix-config`) with dropdown selection (separate primary & secondary accounts) and **server region selector (`EU` / `US-Global`)**.
+  * Dedicated write/control node (`anker-solix-control`) linked exclusively to the primary owner account for safe Read-Modify-Write commands (`set_mode`, `set_power`, `set_min_soc`, `set_grid_export`), keeping 24/7 polling isolated on the secondary read-only account.
   * Automatic multi-instance start offset (`0–1,500 ms`) when triggering multiple nodes from a single inject.
-  * Write commands via safe Read-Modify-Write (`set_mode`, `set_power`, `set_min_soc`, `set_grid_export` – requires primary owner account).
 * **`v2.0.x`:**
   * Extended support for the wider Anker SOLIX ecosystem: **V1 Smart EV Charger (`A5191`)**, **SOLIX X1 Home Energy Storage**, and **portable power stations / backup units (`pps_info`)**.
 
@@ -73,13 +77,13 @@ Node-RED node to read real-time data (`W`, `%`, `°C`) and energy statistics (`k
 
 ## 🇩🇪 Kurzübersicht (Deutsch)
 
-Node-RED-Baustein zum Auslesen von Echtzeit- (`W`, `%`, `°C`) und Statistikdaten (`kWh`) für **Anker SOLIX Solar- & Speichersysteme** (Solarbank 2 E1600 Pro/Plus, Solarbank 3 E2700 Pro, Solarbank Max `AE111`, Solarbank Max AC `A17E2`/`B17E2`, Power Dock `AE100` sowie Anker Smart Meter) über die **Anker EU-Cloud**.
+Node-RED-Baustein zum Auslesen von Echtzeit- (`W`, `%`) und Statistikdaten (`kWh`) für **Anker SOLIX Solar- & Speichersysteme** (Solarbank 2 E1600 Pro/Plus, Solarbank 3 E2700 Pro, Solarbank Max `AE111`, Solarbank Max AC `A17E2`/`B17E2`, Power Dock `AE100` sowie Anker Smart Meter) über die **Anker EU-Cloud**.
 
 * **Universeller Ausgang 1 (`{ topic, payload }`):** Sendet Werte bei Änderung (sowie alle 300 Sekunden als Stützpunkt gegen Spline-Wellen in CCU-Historian / InfluxDB) direkt an **OpenCCU / HomeMatic** (`ccu-sysvar`), **MQTT-Broker** (`mqtt out` für Home Assistant / ioBroker), **InfluxDB** oder **KNX / Loxone**.
 * **Rohdaten-Ausgang 2 (`scen_info` & `energy_analysis`):** Liefert die vollständigen JSON-Antworten der API für eigene Auswertungen oder zur Diagnose.
 * **Intelligente Hardware-Erkennung & Akkuschutz:** Erkennt Power Dock (`AE100`), Anker Smart Meter (`A17X7`, `A17X8`, `AE1X0`, `AE1R0`, `SHEM3`) und 230V-Heimspeicher (`AE111`, `A17E2`, `B17E2`) automatisch für lückenlose 24/7-Echtzeitdaten, während reine Solarbank-Anlagen nachts im akkuschonenden Schlafmodus bleiben.
 * **Konten-Empfehlung:** Ein geteiltes **Zweitkonto** wird für das reine Auslesen von Live- und Statistikdaten empfohlen (maximale Sicherheit und saubere Trennung); das **Hauptkonto (Eigentümer)** ist erst ab `v1.1.0` nötig, wenn Schreibbefehle / Steuerungen an die Anlage gesendet werden sollen (Anker erlaubt inzwischen parallele Logins von App und Node-RED gleichzeitig).
-* **EU-Cloud-Unterstützung:** Funktioniert mit allen europäischen Anker-SOLIX-Konten (`://anker.com`).
+* **EU-Cloud-Unterstütung:** Funktioniert mit allen europäischen Anker-SOLIX-Konten (`https://anker.com`).
 
 👉 **[Zur vollständigen deutschen Anleitung (Installation, Systemvariablen, MQTT & Steuerbefehle)](README.de.md)**
 
