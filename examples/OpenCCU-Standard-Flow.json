@@ -2,15 +2,22 @@
     {
         "id": "b1a2c3d4e5f60001",
         "type": "tab",
-        "label": "Anker SOLIX OpenCCU Beispiel",
+        "label": "Anker SOLIX OpenCCU Example",
         "disabled": false,
-        "info": "Beispiel-Flow für den All-in-One Baustein Anker SOLIX OpenCCU (V1.0.6).\n\n1. Trage im blauen Anker-Baustein deine E-Mail, dein Passwort und deine OpenCCU-Systemvariablen ein.\n2. Verbinde Ausgang 1 mit deinem blauen OpenCCU-SysVar-Node (Feld Variable/Name leer lassen!).\n3. Nutze den zweiten Inject-Node (get_sites), um alle Anlagen und SITE_IDs in deinem Konto anzuzeigen."
+        "info": "Example flow for node-red-contrib-anker-solix (v1.1.0+).\n\n1. Open the Anker SOLIX node and click the pencil icon next to 'Account' to enter your email, password, and server region (EU / US / AU / CN).\n2. Map your OpenCCU system variable names in the SysVars JSON.\n3. Connect Output 1 to your OpenCCU SysVar node (leave the variable name field empty in ccu-sysvar!).\n4. Use 'get_sites' to discover all SITE_IDs in your account."
+    },
+    {
+        "id": "b1a2c3d4e5f60000",
+        "type": "anker-solix-config",
+        "name": "Anker SOLIX Account",
+        "region": "eu",
+        "timezone": "Europe/Berlin"
     },
     {
         "id": "b1a2c3d4e5f60002",
         "type": "inject",
         "z": "b1a2c3d4e5f60001",
-        "name": "Alle 5 Sekunden abrufen",
+        "name": "Poll every 5 seconds",
         "props": [
             {
                 "p": "payload"
@@ -23,7 +30,7 @@
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 190,
+        "x": 180,
         "y": 140,
         "wires": [
             [
@@ -35,7 +42,7 @@
         "id": "b1a2c3d4e5f60003",
         "type": "inject",
         "z": "b1a2c3d4e5f60001",
-        "name": "SITE_IDs abrufen (get_sites)",
+        "name": "Discover SITE_IDs (get_sites)",
         "props": [
             {
                 "p": "topic",
@@ -47,7 +54,7 @@
         "once": false,
         "onceDelay": 0.1,
         "topic": "get_sites",
-        "x": 200,
+        "x": 190,
         "y": 220,
         "wires": [
             [
@@ -60,7 +67,7 @@
         "type": "anker-solix",
         "z": "b1a2c3d4e5f60001",
         "name": "Anker SOLIX OpenCCU",
-        "email": "",
+        "server": "b1a2c3d4e5f60000",
         "siteId": "",
         "powerdockSn": "",
         "powerdockPn": "",
@@ -68,7 +75,7 @@
         "sb2Sn": "",
         "sb3Sn": "",
         "sb4Sn": "",
-        "sysvarsJson": "{\n    \"PD_HAUSLAST\": \"\",\n    \"PD_NETZ_BEZUG\": \"\",\n    \"PD_NETZ_EINSP\": \"\",\n    \"PD_SOC\": \"\",\n    \"PD_SOLAR\": \"\"\n}",
+        "sysvarsJson": "{\n    \"SITE_HOME_LOAD\": \"\",\n    \"SITE_GRID_IMPORT\": \"\",\n    \"SITE_GRID_EXPORT\": \"\",\n    \"SITE_SOC\": \"\",\n    \"SITE_CHARGE\": \"\",\n    \"SITE_AC_CHARGE\": \"\",\n    \"SITE_SOLAR\": \"\",\n    \"SITE_DISCHARGE\": \"\",\n    \"SITE_OUTPUT\": \"\",\n    \"SITE_SMARTMETER_ONLINE\": \"\"\n}",
         "x": 490,
         "y": 180,
         "wires": [
@@ -87,7 +94,7 @@
         "id": "b1a2c3d4e5f60005",
         "type": "debug",
         "z": "b1a2c3d4e5f60001",
-        "name": "Ausgang 1: Hier OpenCCU SysVar-Node anschließen!",
+        "name": "Output 1: Connect OpenCCU SysVar node here!",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -104,7 +111,7 @@
         "id": "b1a2c3d4e5f60006",
         "type": "debug",
         "z": "b1a2c3d4e5f60001",
-        "name": "Ausgang 2: Cloud Rohdaten",
+        "name": "Output 2: Cloud Raw JSON",
         "active": false,
         "tosidebar": true,
         "console": false,
@@ -113,7 +120,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 780,
+        "x": 790,
         "y": 180,
         "wires": []
     },
@@ -121,7 +128,7 @@
         "id": "b1a2c3d4e5f60007",
         "type": "debug",
         "z": "b1a2c3d4e5f60001",
-        "name": "Ausgang 3: Status & SITE_IDs",
+        "name": "Output 3: Alarms, Status & SITE_IDs",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -130,9 +137,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 790,
+        "x": 810,
         "y": 240,
         "wires": []
     }
 ]
-

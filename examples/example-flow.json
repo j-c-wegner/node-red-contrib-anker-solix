@@ -2,20 +2,23 @@
     {
         "id": "tab_anker_solix_example",
         "type": "tab",
-        "label": "Anker SOLIX Beispiel",
+        "label": "Anker SOLIX Complete Example",
         "disabled": false,
-        "info": "Beispiel-Flow für node-red-contrib-anker-solix (v1.0.27+) inkl. Steuerbefehlen."
+        "info": "Complete example flow for node-red-contrib-anker-solix (v1.1.0+) including data polling, runtime commands, and device control."
+    },
+    {
+        "id": "cfg_anker_solix_example",
+        "type": "anker-solix-config",
+        "name": "Anker SOLIX Account",
+        "region": "eu",
+        "timezone": "Europe/Berlin"
     },
     {
         "id": "inject_anker_5s",
         "type": "inject",
         "z": "tab_anker_solix_example",
-        "name": "Alle 5 Sek. abfragen",
-        "props": [
-            {
-                "p": "payload"
-            }
-        ],
+        "name": "Poll every 5s",
+        "props": [{ "p": "payload" }],
         "repeat": "5",
         "crontab": "",
         "once": true,
@@ -23,49 +26,31 @@
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 160,
+        "x": 150,
         "y": 100,
-        "wires": [
-            [
-                "node_anker_solix_main"
-            ]
-        ]
+        "wires": [["node_anker_solix_main"]]
     },
     {
         "id": "inject_anker_get_sites",
         "type": "inject",
         "z": "tab_anker_solix_example",
-        "name": "Anlagen-IDs abrufen (get_sites)",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "Discover Sites (get_sites)",
+        "props": [{ "p": "topic", "vt": "str" }],
         "repeat": "",
         "crontab": "",
         "once": false,
         "onceDelay": 0.1,
         "topic": "get_sites",
-        "x": 190,
+        "x": 180,
         "y": 160,
-        "wires": [
-            [
-                "node_anker_solix_main"
-            ]
-        ]
+        "wires": [["node_anker_solix_main"]]
     },
     {
         "id": "inject_anker_get_stats",
         "type": "inject",
         "z": "tab_anker_solix_example",
-        "name": "Statistiken sofort (get_stats)",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            }
-        ],
+        "name": "Refresh Stats (get_stats)",
+        "props": [{ "p": "topic", "vt": "str" }],
         "repeat": "",
         "crontab": "",
         "once": false,
@@ -73,26 +58,14 @@
         "topic": "get_stats",
         "x": 180,
         "y": 220,
-        "wires": [
-            [
-                "node_anker_solix_main"
-            ]
-        ]
+        "wires": [["node_anker_solix_main"]]
     },
     {
         "id": "inject_anker_wakeup_auto",
         "type": "inject",
         "z": "tab_anker_solix_example",
-        "name": "Wakeup: Auto (set_wakeup = auto)",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            },
-            {
-                "p": "payload"
-            }
-        ],
+        "name": "Wakeup: Auto",
+        "props": [{ "p": "topic", "vt": "str" }, { "p": "payload" }],
         "repeat": "",
         "crontab": "",
         "once": false,
@@ -100,28 +73,16 @@
         "topic": "set_wakeup",
         "payload": "auto",
         "payloadType": "str",
-        "x": 200,
+        "x": 150,
         "y": 280,
-        "wires": [
-            [
-                "node_anker_solix_main"
-            ]
-        ]
+        "wires": [["node_anker_solix_main"]]
     },
     {
         "id": "inject_anker_wakeup_on",
         "type": "inject",
         "z": "tab_anker_solix_example",
-        "name": "Wakeup: EIN (set_wakeup = true)",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            },
-            {
-                "p": "payload"
-            }
-        ],
+        "name": "Wakeup: ON",
+        "props": [{ "p": "topic", "vt": "str" }, { "p": "payload" }],
         "repeat": "",
         "crontab": "",
         "once": false,
@@ -129,28 +90,16 @@
         "topic": "set_wakeup",
         "payload": "true",
         "payloadType": "bool",
-        "x": 190,
+        "x": 150,
         "y": 340,
-        "wires": [
-            [
-                "node_anker_solix_main"
-            ]
-        ]
+        "wires": [["node_anker_solix_main"]]
     },
     {
         "id": "inject_anker_wakeup_off",
         "type": "inject",
         "z": "tab_anker_solix_example",
-        "name": "Wakeup: AUS (set_wakeup = false)",
-        "props": [
-            {
-                "p": "topic",
-                "vt": "str"
-            },
-            {
-                "p": "payload"
-            }
-        ],
+        "name": "Wakeup: OFF",
+        "props": [{ "p": "topic", "vt": "str" }, { "p": "payload" }],
         "repeat": "",
         "crontab": "",
         "once": false,
@@ -158,20 +107,16 @@
         "topic": "set_wakeup",
         "payload": "false",
         "payloadType": "bool",
-        "x": 200,
+        "x": 150,
         "y": 400,
-        "wires": [
-            [
-                "node_anker_solix_main"
-            ]
-        ]
+        "wires": [["node_anker_solix_main"]]
     },
     {
         "id": "node_anker_solix_main",
         "type": "anker-solix",
         "z": "tab_anker_solix_example",
         "name": "Anker SOLIX Cloud",
-        "email": "",
+        "server": "cfg_anker_solix_example",
         "siteId": "",
         "powerdockSn": "",
         "powerdockPn": "",
@@ -179,26 +124,16 @@
         "sb2Sn": "",
         "sb3Sn": "",
         "sb4Sn": "",
-        "sysvarsJson": "{\n  \"_ANLEITUNG_1\": \"Trage hinter dem Doppelpunkt den Namen deiner OpenCCU-Systemvariable (oder z.B. dein MQTT-Topic) ein. Leere Felder werden ignoriert.\",\n  \"_BEREICH_POWERDOCK\": \"--- GESAMT / POWER DOCK LIVE (Einheit: W bzw. %) ---\",\n  \"PD_HAUSLAST\": \"\",\n  \"PD_NETZ_BEZUG\": \"\",\n  \"PD_NETZ_EINSP\": \"\",\n  \"PD_SOC\": \"\",\n  \"PD_LADEN\": \"\",\n  \"PD_SOLAR\": \"\",\n  \"PD_ENTLADEN\": \"\",\n  \"PD_AUSGANG\": \"\",\n  \"_BEREICH_SB1\": \"--- SOLARBANK 1 LIVE (Einheit: W bzw. %) ---\",\n  \"SB1_SOC\": \"\",\n  \"SB1_SOLAR\": \"\",\n  \"SB1_LADEN\": \"\",\n  \"SB1_OUTPUT\": \"\",\n  \"SB1_PV1\": \"\",\n  \"SB1_PV2\": \"\",\n  \"SB1_PV3\": \"\",\n  \"SB1_PV4\": \"\",\n  \"_BEREICH_SB2\": \"--- SOLARBANK 2 LIVE (Einheit: W bzw. %) ---\",\n  \"SB2_SOC\": \"\",\n  \"SB2_SOLAR\": \"\",\n  \"SB2_LADEN\": \"\",\n  \"SB2_OUTPUT\": \"\",\n  \"SB2_PV1\": \"\",\n  \"SB2_PV2\": \"\",\n  \"SB2_PV3\": \"\",\n  \"SB2_PV4\": \"\",\n  \"_BEREICH_SB3\": \"--- SOLARBANK 3 LIVE (Einheit: W bzw. %) ---\",\n  \"SB3_SOC\": \"\",\n  \"SB3_SOLAR\": \"\",\n  \"SB3_LADEN\": \"\",\n  \"SB3_OUTPUT\": \"\",\n  \"SB3_PV1\": \"\",\n  \"SB3_PV2\": \"\",\n  \"SB3_PV3\": \"\",\n  \"SB3_PV4\": \"\",\n  \"_BEREICH_SB4\": \"--- SOLARBANK 4 LIVE (Einheit: W bzw. %) ---\",\n  \"SB4_SOC\": \"\",\n  \"SB4_SOLAR\": \"\",\n  \"SB4_LADEN\": \"\",\n  \"SB4_OUTPUT\": \"\",\n  \"SB4_PV1\": \"\",\n  \"SB4_PV2\": \"\",\n  \"SB4_PV3\": \"\",\n  \"SB4_PV4\": \"\",\n  \"_BEREICH_STAT_GESAMT\": \"--- STATISTIK GESAMT (Einheit: kWh) ---\",\n  \"STAT_GES_TAG_SOLAR\": \"\",\n  \"STAT_GES_TAG_LADEN\": \"\",\n  \"STAT_GES_TAG_ENTLADEN\": \"\",\n  \"STAT_GES_TAG_SOLAR_HAUS\": \"\",\n  \"STAT_GES_TAG_EINSP\": \"\",\n  \"STAT_GES_TAG_NETZ\": \"\",\n  \"STAT_GES_TAG_HAUS\": \"\",\n  \"STAT_GES_TAG_BAT_HAUS\": \"\",\n  \"STAT_GES_WOCHE_SOLAR\": \"\",\n  \"STAT_GES_WOCHE_LADEN\": \"\",\n  \"STAT_GES_WOCHE_ENTLADEN\": \"\",\n  \"STAT_GES_WOCHE_SOLAR_HAUS\": \"\",\n  \"STAT_GES_WOCHE_EINSP\": \"\",\n  \"STAT_GES_WOCHE_NETZ\": \"\",\n  \"STAT_GES_WOCHE_HAUS\": \"\",\n  \"STAT_GES_WOCHE_BAT_HAUS\": \"\",\n  \"STAT_GES_MONAT_SOLAR\": \"\",\n  \"STAT_GES_MONAT_LADEN\": \"\",\n  \"STAT_GES_MONAT_ENTLADEN\": \"\",\n  \"STAT_GES_MONAT_SOLAR_HAUS\": \"\",\n  \"STAT_GES_MONAT_EINSP\": \"\",\n  \"STAT_GES_MONAT_NETZ\": \"\",\n  \"STAT_GES_MONAT_HAUS\": \"\",\n  \"STAT_GES_MONAT_BAT_HAUS\": \"\",\n  \"STAT_GES_JAHR_SOLAR\": \"\",\n  \"STAT_GES_JAHR_LADEN\": \"\",\n  \"STAT_GES_JAHR_ENTLADEN\": \"\",\n  \"STAT_GES_JAHR_SOLAR_HAUS\": \"\",\n  \"STAT_GES_JAHR_EINSP\": \"\",\n  \"STAT_GES_JAHR_NETZ\": \"\",\n  \"STAT_GES_JAHR_HAUS\": \"\",\n  \"STAT_GES_JAHR_BAT_HAUS\": \"\",\n  \"_BEREICH_STAT_SB1\": \"--- STATISTIK SOLARBANK 1 (Einheit: kWh) ---\",\n  \"STAT_SB1_TAG_SOLAR\": \"\",\n  \"STAT_SB1_TAG_LADEN\": \"\",\n  \"STAT_SB1_TAG_ENTLADEN\": \"\",\n  \"STAT_SB1_WOCHE_SOLAR\": \"\",\n  \"STAT_SB1_WOCHE_LADEN\": \"\",\n  \"STAT_SB1_WOCHE_ENTLADEN\": \"\",\n  \"STAT_SB1_MONAT_SOLAR\": \"\",\n  \"STAT_SB1_MONAT_LADEN\": \"\",\n  \"STAT_SB1_MONAT_ENTLADEN\": \"\",\n  \"STAT_SB1_JAHR_SOLAR\": \"\",\n  \"STAT_SB1_JAHR_LADEN\": \"\",\n  \"STAT_SB1_JAHR_ENTLADEN\": \"\",\n  \"_BEREICH_STAT_SB2\": \"--- STATISTIK SOLARBANK 2 (Einheit: kWh) ---\",\n  \"STAT_SB2_TAG_SOLAR\": \"\",\n  \"STAT_SB2_TAG_LADEN\": \"\",\n  \"STAT_SB2_TAG_ENTLADEN\": \"\",\n  \"STAT_SB2_WOCHE_SOLAR\": \"\",\n  \"STAT_SB2_WOCHE_LADEN\": \"\",\n  \"STAT_SB2_WOCHE_ENTLADEN\": \"\",\n  \"STAT_SB2_MONAT_SOLAR\": \"\",\n  \"STAT_SB2_MONAT_LADEN\": \"\",\n  \"STAT_SB2_MONAT_ENTLADEN\": \"\",\n  \"STAT_SB2_JAHR_SOLAR\": \"\",\n  \"STAT_SB2_JAHR_LADEN\": \"\",\n  \"STAT_SB2_JAHR_ENTLADEN\": \"\",\n  \"_BEREICH_STAT_SB3\": \"--- STATISTIK SOLARBANK 3 (Einheit: kWh) ---\",\n  \"STAT_SB3_TAG_SOLAR\": \"\",\n  \"STAT_SB3_TAG_LADEN\": \"\",\n  \"STAT_SB3_TAG_ENTLADEN\": \"\",\n  \"STAT_SB3_WOCHE_SOLAR\": \"\",\n  \"STAT_SB3_WOCHE_LADEN\": \"\",\n  \"STAT_SB3_WOCHE_ENTLADEN\": \"\",\n  \"STAT_SB3_MONAT_SOLAR\": \"\",\n  \"STAT_SB3_MONAT_LADEN\": \"\",\n  \"STAT_SB3_MONAT_ENTLADEN\": \"\",\n  \"STAT_SB3_JAHR_SOLAR\": \"\",\n  \"STAT_SB3_JAHR_LADEN\": \"\",\n  \"STAT_SB3_JAHR_ENTLADEN\": \"\",\n  \"_BEREICH_STAT_SB4\": \"--- STATISTIK SOLARBANK 4 (Einheit: kWh) ---\",\n  \"STAT_SB4_TAG_SOLAR\": \"\",\n  \"STAT_SB4_TAG_LADEN\": \"\",\n  \"STAT_SB4_TAG_ENTLADEN\": \"\",\n  \"STAT_SB4_WOCHE_SOLAR\": \"\",\n  \"STAT_SB4_WOCHE_LADEN\": \"\",\n  \"STAT_SB4_WOCHE_ENTLADEN\": \"\",\n  \"STAT_SB4_MONAT_SOLAR\": \"\",\n  \"STAT_SB4_MONAT_LADEN\": \"\",\n  \"STAT_SB4_MONAT_ENTLADEN\": \"\",\n  \"STAT_SB4_JAHR_SOLAR\": \"\",\n  \"STAT_SB4_JAHR_LADEN\": \"\",\n  \"STAT_SB4_JAHR_ENTLADEN\": \"\"\n}",
-        "x": 510,
+        "sysvarsJson": "{\n  \"_INFO_1\": \"Enter the name of your OpenCCU system variable (or MQTT topic) after the colon. Empty fields are ignored.\",\n  \"_SECTION_SITE\": \"--- SITE / TOTAL LIVE (Unit: W, % or 0/1) ---\",\n  \"SITE_HOME_LOAD\": \"\",\n  \"SITE_GRID_IMPORT\": \"\",\n  \"SITE_GRID_EXPORT\": \"\",\n  \"SITE_SOC\": \"\",\n  \"SITE_CHARGE\": \"\",\n  \"SITE_AC_CHARGE\": \"\",\n  \"SITE_SOLAR\": \"\",\n  \"SITE_DISCHARGE\": \"\",\n  \"SITE_OUTPUT\": \"\",\n  \"SITE_SMARTMETER_ONLINE\": \"\",\n  \"_SECTION_SB1\": \"--- SOLARBANK 1 LIVE (Unit: W or %) ---\",\n  \"SB1_SOC\": \"\",\n  \"SB1_SOLAR\": \"\",\n  \"SB1_CHARGE\": \"\",\n  \"SB1_AC_CHARGE\": \"\",\n  \"SB1_OUTPUT\": \"\",\n  \"SB1_PV1\": \"\",\n  \"SB1_PV2\": \"\",\n  \"SB1_PV3\": \"\",\n  \"SB1_PV4\": \"\",\n  \"_SECTION_STAT_SITE\": \"--- SITE STATISTICS (Unit: kWh) ---\",\n  \"STAT_DAY_SOLAR\": \"\",\n  \"STAT_DAY_CHARGE\": \"\",\n  \"STAT_DAY_DISCHARGE\": \"\",\n  \"STAT_DAY_SOLAR_HOME\": \"\",\n  \"STAT_DAY_GRID_EXPORT\": \"\",\n  \"STAT_DAY_GRID_IMPORT\": \"\",\n  \"STAT_DAY_HOME\": \"\",\n  \"STAT_DAY_BAT_HOME\": \"\"\n}",
+        "x": 490,
         "y": 220,
-        "wires": [
-            [
-                "debug_anker_out1"
-            ],
-            [
-                "debug_anker_out2"
-            ],
-            [
-                "debug_anker_out3"
-            ]
-        ]
+        "wires": [["debug_anker_out1"], ["debug_anker_out2"], ["debug_anker_out3"]]
     },
     {
         "id": "debug_anker_out1",
         "type": "debug",
         "z": "tab_anker_solix_example",
-        "name": "Ausgang 1: SysVars / MQTT",
+        "name": "Output 1: SysVars / MQTT",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -207,7 +142,7 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 820,
+        "x": 810,
         "y": 160,
         "wires": []
     },
@@ -215,7 +150,7 @@
         "id": "debug_anker_out2",
         "type": "debug",
         "z": "tab_anker_solix_example",
-        "name": "Ausgang 2: Rohdaten JSON",
+        "name": "Output 2: Raw JSON",
         "active": false,
         "tosidebar": true,
         "console": false,
@@ -224,7 +159,7 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 820,
+        "x": 790,
         "y": 220,
         "wires": []
     },
@@ -232,7 +167,7 @@
         "id": "debug_anker_out3",
         "type": "debug",
         "z": "tab_anker_solix_example",
-        "name": "Ausgang 3: Sites & Fehler",
+        "name": "Output 3: Alarms & Sites",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -243,6 +178,72 @@
         "statusType": "auto",
         "x": 810,
         "y": 280,
+        "wires": []
+    },
+    {
+        "id": "inject_ctrl_mode_1",
+        "type": "inject",
+        "z": "tab_anker_solix_example",
+        "name": "Mode 1: Self-Consumption",
+        "props": [{ "p": "topic", "vt": "str" }, { "p": "payload" }],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "set_usage_mode",
+        "payload": "1",
+        "payloadType": "num",
+        "x": 180,
+        "y": 500,
+        "wires": [["node_anker_solix_ctrl"]]
+    },
+    {
+        "id": "inject_ctrl_mode_7",
+        "type": "inject",
+        "z": "tab_anker_solix_example",
+        "name": "Mode 7: AI Smart Mode",
+        "props": [{ "p": "topic", "vt": "str" }, { "p": "payload" }],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "set_usage_mode",
+        "payload": "7",
+        "payloadType": "num",
+        "x": 180,
+        "y": 560,
+        "wires": [["node_anker_solix_ctrl"]]
+    },
+    {
+        "id": "node_anker_solix_ctrl",
+        "type": "anker-solix-control",
+        "z": "tab_anker_solix_example",
+        "name": "Anker SOLIX Control",
+        "server": "cfg_anker_solix_example",
+        "siteId": "",
+        "command": "from_msg",
+        "usageMode": 1,
+        "powerWatt": 200,
+        "deviceSn": "",
+        "x": 490,
+        "y": 530,
+        "wires": [["debug_anker_ctrl"]]
+    },
+    {
+        "id": "debug_anker_ctrl",
+        "type": "debug",
+        "z": "tab_anker_solix_example",
+        "name": "Control Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 790,
+        "y": 530,
         "wires": []
     }
 ]
