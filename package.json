@@ -1,7 +1,7 @@
 {
   "name": "node-red-contrib-anker-solix",
-  "version": "1.0.27",
-  "description": "Node-RED node to read real-time data and energy statistics from Anker SOLIX Solar & Energy Storage Systems (Solarbank 2/3, Solarbank Max, Power Dock AE100, Smart Meter) for OpenCCU, MQTT, Home Assistant, ioBroker, InfluxDB and KNX/Loxone.",
+  "version": "1.1.0",
+  "description": "Node-RED nodes to read real-time data, AC charging & energy statistics and control usage modes for Anker SOLIX Solar & Energy Storage Systems (Solarbank 1/2/3 Pro/4 E5000 Pro AE103, SOLIX E10, Power Dock AE100, Smart Meter) for OpenCCU, MQTT, Home Assistant, ioBroker, InfluxDB and KNX/Loxone.",
   "main": "anker-solix.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -12,7 +12,9 @@
   "node-red": {
     "version": ">=2.0.0",
     "nodes": {
-      "anker-solix": "anker-solix.js"
+      "anker-solix": "anker-solix.js",
+      "anker-solix-config": "anker-solix-config.js",
+      "anker-solix-control": "anker-solix-control.js"
     }
   },
   "keywords": [
@@ -23,8 +25,12 @@
     "solarbank",
     "solarbank-2",
     "solarbank-3",
+    "solarbank-4",
+    "ae103",
+    "solix-e10",
     "solarbank-max",
     "power-dock",
+    "ae100",
     "smart-meter",
     "solar",
     "battery",

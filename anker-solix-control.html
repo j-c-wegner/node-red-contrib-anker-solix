@@ -1,0 +1,86 @@
+<script type="text/javascript">
+    RED.nodes.registerType('anker-solix-control', {
+        category: 'Anker SOLIX',
+        color: '#FF8C00',
+        defaults: {
+            name: { value: "" },
+            server: { value: "", type: "anker-solix-config", required: true },
+            siteId: { value: "" },
+            command: { value: "set_usage_mode" },
+            usageMode: { value: 1 },
+            powerWatt: {
+                value: 200,
+                validate: function (v) { return v === undefined || v === null || v === "" || !isNaN(Number(v)); }
+            },
+            deviceSn: { value: "" }
+        },
+        inputs: 1,
+        outputs: 1,
+        outputLabels: ["Response / Status"],
+        icon: "font-awesome/fa-sliders",
+        paletteLabel: "Anker SOLIX Control",
+        label: function () {
+            return this.name || "Anker SOLIX Control";
+        },
+        oneditprepare: function () {
+            function updateFields() {
+                const cmd = $("#node-input-command").val();
+                $(".ctrl-mode-row").toggle(cmd === "set_usage_mode");
+                $(".ctrl-power-row").toggle(cmd === "set_output_power");
+            }
+            $("#node-input-command").on("change", updateFields);
+            updateFields();
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="anker-solix-control">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Anker SOLIX Control">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-cog"></i> Account</label>
+        <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-siteId"><i class="fa fa-home"></i> SITE_ID (opt.)</label>
+        <input type="text" id="node-input-siteId" placeholder="Leave empty for auto-detection">
+    </div>
+    <div class="form-row">
+        <label for="node-input-command"><i class="fa fa-terminal"></i> Command</label>
+        <select id="node-input-command" style="width: 70%;">
+            <option value="set_usage_mode">Switch Usage Mode (Self-Consumption / Custom / AI)</option>
+            <option value="set_output_power">Set Output Power (Watts - Standalone Solarbank)</option>
+            <option value="from_msg">Dynamic via msg.topic / msg.payload</option>
+            <option value="get_params">Read Device Parameters (Diagnostics)</option>
+        </select>
+    </div>
+    <div class="form-row ctrl-mode-row">
+        <label for="node-input-usageMode"><i class="fa fa-sliders"></i> Mode</label>
+        <select id="node-input-usageMode" style="width: 70%;">
+            <option value="1">Self-Consumption / Smart Meter (1)</option>
+            <option value="2">Custom Mode / Schedule (2)</option>
+            <option value="3">Smart Plug / Time-of-Use (3)</option>
+            <option value="7">Smart Mode / AI EMS (7)</option>
+        </select>
+    </div>
+    <div class="form-row ctrl-power-row" style="display:none;">
+        <label for="node-input-powerWatt"><i class="fa fa-bolt"></i> Power (W)</label>
+        <input type="number" id="node-input-powerWatt" placeholder="200" min="0" max="4800" style="width: 120px;">
+        <span style="margin-left: 6px;">Watts (overridable via <code>msg.payload</code>)</span>
+    </div>
+    <div class="form-row">
+        <label for="node-input-deviceSn"><i class="fa fa-microchip"></i> Device SN</label>
+        <input type="text" id="node-input-deviceSn" placeholder="Optional (empty = Auto)">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="anker-solix-control">
+    <p>Controls <b>Anker SOLIX</b> systems (Power Dock <code>AE100</code>, Solarbank 4 <code>AE103</code>, Solarbank 3 <code>A17C5</code>, Solarbank 2 &amp; Solarbank 1) using the primary owner account.</p>
+    <ul>
+        <li><b>SITE_ID (optional):</b> Leave empty to auto-detect your primary site, or enter a specific <code>SITE_ID</code> when controlling multiple sites with one account.</li>
+        <li><b>Usage Mode (<code>set_usage_mode</code>):</b> Switches between <code>1</code> (Self-Consumption / Smart Meter), <code>2</code> (Custom Mode / Schedule — automatically creates a 24h fallback schedule if none exists; configure custom time slots in the Anker app), <code>3</code> (Smart Plug), and <code>7</code> (AI Smart Mode).</li>
+        <li><b>Output Power (<code>set_output_power</code>):</b> Sets the AC output power in Watts (primarily for standalone solarbanks without Power Dock).</li>
+    </ul>
+</script>

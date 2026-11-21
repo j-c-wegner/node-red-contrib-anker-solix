@@ -1,0 +1,56 @@
+<script type="text/javascript">
+    RED.nodes.registerType('anker-solix-config', {
+        category: 'config',
+        defaults: {
+            name: { value: "" },
+            region: { value: "eu", required: true },
+            timezone: { value: "Europe/Berlin" }
+        },
+        credentials: {
+            email: { type: "text" },
+            password: { type: "password" }
+        },
+        label: function () {
+            return this.name || ("Anker SOLIX (" + (this.region || "eu").toUpperCase() + ")");
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="anker-solix-config">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name" placeholder="My Anker Account">
+    </div>
+    <hr>
+    <h4><i class="fa fa-cloud"></i> Anker Cloud Credentials</h4>
+    <div class="form-row">
+        <label for="node-config-input-email"><i class="fa fa-envelope"></i> Email</label>
+        <input type="text" id="node-config-input-email" placeholder="your@email.com">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-password"><i class="fa fa-lock"></i> Password</label>
+        <input type="password" id="node-config-input-password" placeholder="Anker App Password">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-region"><i class="fa fa-globe"></i> Region</label>
+        <select id="node-config-input-region" style="width: 70%;">
+            <option value="eu">Europe / UK (EU)</option>
+            <option value="us">North America (US / CA)</option>
+            <option value="au">Australia (AU)</option>
+            <option value="cn">China (CN)</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-timezone"><i class="fa fa-clock-o"></i> Timezone</label>
+        <input type="text" id="node-config-input-timezone" placeholder="Europe/Berlin">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="anker-solix-config">
+    <p>Central account configuration for all <b>Anker SOLIX</b> nodes (data polling &amp; device control).</p>
+    <ul>
+        <li><b>Email &amp; Password:</b> Your Anker SOLIX app credentials (stored encrypted in Node-RED).</li>
+        <li><b>Region:</b> Server region of your Anker account (<code>EU</code>, <code>US</code>, <code>AU</code>, or <code>CN</code>).</li>
+        <li><b>Multiple Sites:</b> One account node can be shared across multiple data/control nodes by specifying each site's <code>SITE_ID</code> directly in the respective node.</li>
+    </ul>
+</script>

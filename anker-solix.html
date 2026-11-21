@@ -3,8 +3,8 @@
         category: 'Anker SOLIX',
         color: '#00A8E8',
         defaults: {
-            name: { value: "Anker SOLIX OpenCCU" },
-            email: { value: "", required: true },
+            name: { value: "Anker SOLIX" },
+            server: { value: "", type: "anker-solix-config", required: true },
             siteId: { value: "" },
             powerdockSn: { value: "" },
             powerdockPn: { value: "" },
@@ -13,181 +13,85 @@
             sb3Sn: { value: "" },
             sb4Sn: { value: "" },
             sysvarsJson: { value: JSON.stringify({
-                "_ANLEITUNG_1": "Trage hinter dem Doppelpunkt den Namen deiner OpenCCU-Systemvariable (oder z.B. dein MQTT-Topic) ein. Leere Felder werden ignoriert.",
-                "_BEREICH_POWERDOCK": "--- GESAMT / POWER DOCK LIVE (Einheit: W bzw. %) ---",
-                "PD_HAUSLAST": "",
-                "PD_NETZ_BEZUG": "",
-                "PD_NETZ_EINSP": "",
-                "PD_SOC": "",
-                "PD_LADEN": "",
-                "PD_SOLAR": "",
-                "PD_ENTLADEN": "",
-                "PD_AUSGANG": "",
-                "_BEREICH_SB1": "--- SOLARBANK 1 LIVE (Einheit: W bzw. %) ---",
-                "SB1_SOC": "",
-                "SB1_SOLAR": "",
-                "SB1_LADEN": "",
-                "SB1_OUTPUT": "",
-                "SB1_PV1": "",
-                "SB1_PV2": "",
-                "SB1_PV3": "",
-                "SB1_PV4": "",
-                "_BEREICH_SB2": "--- SOLARBANK 2 LIVE (Einheit: W bzw. %) ---",
-                "SB2_SOC": "",
-                "SB2_SOLAR": "",
-                "SB2_LADEN": "",
-                "SB2_OUTPUT": "",
-                "SB2_PV1": "",
-                "SB2_PV2": "",
-                "SB2_PV3": "",
-                "SB2_PV4": "",
-                "_BEREICH_SB3": "--- SOLARBANK 3 LIVE (Einheit: W bzw. %) ---",
-                "SB3_SOC": "",
-                "SB3_SOLAR": "",
-                "SB3_LADEN": "",
-                "SB3_OUTPUT": "",
-                "SB3_PV1": "",
-                "SB3_PV2": "",
-                "SB3_PV3": "",
-                "SB3_PV4": "",
-                "_BEREICH_SB4": "--- SOLARBANK 4 LIVE (Einheit: W bzw. %) ---",
-                "SB4_SOC": "",
-                "SB4_SOLAR": "",
-                "SB4_LADEN": "",
-                "SB4_OUTPUT": "",
-                "SB4_PV1": "",
-                "SB4_PV2": "",
-                "SB4_PV3": "",
-                "SB4_PV4": "",
-                "_BEREICH_STAT_GESAMT": "--- STATISTIK GESAMT (Einheit: kWh) ---",
-                "STAT_GES_TAG_SOLAR": "",
-                "STAT_GES_TAG_LADEN": "",
-                "STAT_GES_TAG_ENTLADEN": "",
-                "STAT_GES_TAG_SOLAR_HAUS": "",
-                "STAT_GES_TAG_EINSP": "",
-                "STAT_GES_TAG_NETZ": "",
-                "STAT_GES_TAG_HAUS": "",
-                "STAT_GES_TAG_BAT_HAUS": "",
-                "STAT_GES_WOCHE_SOLAR": "",
-                "STAT_GES_WOCHE_LADEN": "",
-                "STAT_GES_WOCHE_ENTLADEN": "",
-                "STAT_GES_WOCHE_SOLAR_HAUS": "",
-                "STAT_GES_WOCHE_EINSP": "",
-                "STAT_GES_WOCHE_NETZ": "",
-                "STAT_GES_WOCHE_HAUS": "",
-                "STAT_GES_WOCHE_BAT_HAUS": "",
-                "STAT_GES_MONAT_SOLAR": "",
-                "STAT_GES_MONAT_LADEN": "",
-                "STAT_GES_MONAT_ENTLADEN": "",
-                "STAT_GES_MONAT_SOLAR_HAUS": "",
-                "STAT_GES_MONAT_EINSP": "",
-                "STAT_GES_MONAT_NETZ": "",
-                "STAT_GES_MONAT_HAUS": "",
-                "STAT_GES_MONAT_BAT_HAUS": "",
-                "STAT_GES_JAHR_SOLAR": "",
-                "STAT_GES_JAHR_LADEN": "",
-                "STAT_GES_JAHR_ENTLADEN": "",
-                "STAT_GES_JAHR_SOLAR_HAUS": "",
-                "STAT_GES_JAHR_EINSP": "",
-                "STAT_GES_JAHR_NETZ": "",
-                "STAT_GES_JAHR_HAUS": "",
-                "STAT_GES_JAHR_BAT_HAUS": "",
-                "_BEREICH_STAT_SB1": "--- STATISTIK SOLARBANK 1 (Einheit: kWh) ---",
-                "STAT_SB1_TAG_SOLAR": "",
-                "STAT_SB1_TAG_LADEN": "",
-                "STAT_SB1_TAG_ENTLADEN": "",
-                "STAT_SB1_WOCHE_SOLAR": "",
-                "STAT_SB1_WOCHE_LADEN": "",
-                "STAT_SB1_WOCHE_ENTLADEN": "",
-                "STAT_SB1_MONAT_SOLAR": "",
-                "STAT_SB1_MONAT_LADEN": "",
-                "STAT_SB1_MONAT_ENTLADEN": "",
-                "STAT_SB1_JAHR_SOLAR": "",
-                "STAT_SB1_JAHR_LADEN": "",
-                "STAT_SB1_JAHR_ENTLADEN": "",
-                "_BEREICH_STAT_SB2": "--- STATISTIK SOLARBANK 2 (Einheit: kWh) ---",
-                "STAT_SB2_TAG_SOLAR": "",
-                "STAT_SB2_TAG_LADEN": "",
-                "STAT_SB2_TAG_ENTLADEN": "",
-                "STAT_SB2_WOCHE_SOLAR": "",
-                "STAT_SB2_WOCHE_LADEN": "",
-                "STAT_SB2_WOCHE_ENTLADEN": "",
-                "STAT_SB2_MONAT_SOLAR": "",
-                "STAT_SB2_MONAT_LADEN": "",
-                "STAT_SB2_MONAT_ENTLADEN": "",
-                "STAT_SB2_JAHR_SOLAR": "",
-                "STAT_SB2_JAHR_LADEN": "",
-                "STAT_SB2_JAHR_ENTLADEN": "",
-                "_BEREICH_STAT_SB3": "--- STATISTIK SOLARBANK 3 (Einheit: kWh) ---",
-                "STAT_SB3_TAG_SOLAR": "",
-                "STAT_SB3_TAG_LADEN": "",
-                "STAT_SB3_TAG_ENTLADEN": "",
-                "STAT_SB3_WOCHE_SOLAR": "",
-                "STAT_SB3_WOCHE_LADEN": "",
-                "STAT_SB3_WOCHE_ENTLADEN": "",
-                "STAT_SB3_MONAT_SOLAR": "",
-                "STAT_SB3_MONAT_LADEN": "",
-                "STAT_SB3_MONAT_ENTLADEN": "",
-                "STAT_SB3_JAHR_SOLAR": "",
-                "STAT_SB3_JAHR_LADEN": "",
-                "STAT_SB3_JAHR_ENTLADEN": "",
-                "_BEREICH_STAT_SB4": "--- STATISTIK SOLARBANK 4 (Einheit: kWh) ---",
-                "STAT_SB4_TAG_SOLAR": "",
-                "STAT_SB4_TAG_LADEN": "",
-                "STAT_SB4_TAG_ENTLADEN": "",
-                "STAT_SB4_WOCHE_SOLAR": "",
-                "STAT_SB4_WOCHE_LADEN": "",
-                "STAT_SB4_WOCHE_ENTLADEN": "",
-                "STAT_SB4_MONAT_SOLAR": "",
-                "STAT_SB4_MONAT_LADEN": "",
-                "STAT_SB4_MONAT_ENTLADEN": "",
-                "STAT_SB4_JAHR_SOLAR": "",
-                "STAT_SB4_JAHR_LADEN": "",
-                "STAT_SB4_JAHR_ENTLADEN": ""
+                "_INFO_1": "Enter the name of your OpenCCU system variable (or MQTT topic) after the colon. Empty fields are ignored.",
+                "_SECTION_SITE": "--- SITE / TOTAL LIVE (Unit: W, % or 0/1) ---",
+                "SITE_HOME_LOAD": "", "SITE_GRID_IMPORT": "", "SITE_GRID_EXPORT": "", "SITE_SOC": "",
+                "SITE_CHARGE": "", "SITE_AC_CHARGE": "", "SITE_SOLAR": "", "SITE_DISCHARGE": "",
+                "SITE_OUTPUT": "", "SITE_SMARTMETER_ONLINE": "",
+                "_SECTION_SB1": "--- SOLARBANK 1 LIVE (Unit: W or %) ---",
+                "SB1_SOC": "", "SB1_SOLAR": "", "SB1_CHARGE": "", "SB1_AC_CHARGE": "", "SB1_OUTPUT": "",
+                "SB1_PV1": "", "SB1_PV2": "", "SB1_PV3": "", "SB1_PV4": "",
+                "_SECTION_SB2": "--- SOLARBANK 2 LIVE (Unit: W or %) ---",
+                "SB2_SOC": "", "SB2_SOLAR": "", "SB2_CHARGE": "", "SB2_AC_CHARGE": "", "SB2_OUTPUT": "",
+                "SB2_PV1": "", "SB2_PV2": "", "SB2_PV3": "", "SB2_PV4": "",
+                "_SECTION_SB3": "--- SOLARBANK 3 LIVE (Unit: W or %) ---",
+                "SB3_SOC": "", "SB3_SOLAR": "", "SB3_CHARGE": "", "SB3_AC_CHARGE": "", "SB3_OUTPUT": "",
+                "SB3_PV1": "", "SB3_PV2": "", "SB3_PV3": "", "SB3_PV4": "",
+                "_SECTION_SB4": "--- SOLARBANK 4 LIVE (Unit: W or %) ---",
+                "SB4_SOC": "", "SB4_SOLAR": "", "SB4_CHARGE": "", "SB4_AC_CHARGE": "", "SB4_OUTPUT": "",
+                "SB4_PV1": "", "SB4_PV2": "", "SB4_PV3": "", "SB4_PV4": "",
+                "_SECTION_STAT_SITE": "--- SITE STATISTICS (Unit: kWh) ---",
+                "STAT_DAY_SOLAR": "", "STAT_DAY_CHARGE": "", "STAT_DAY_DISCHARGE": "", "STAT_DAY_SOLAR_HOME": "",
+                "STAT_DAY_GRID_EXPORT": "", "STAT_DAY_GRID_IMPORT": "", "STAT_DAY_HOME": "", "STAT_DAY_BAT_HOME": "",
+                "STAT_WEEK_SOLAR": "", "STAT_WEEK_CHARGE": "", "STAT_WEEK_DISCHARGE": "", "STAT_WEEK_SOLAR_HOME": "",
+                "STAT_WEEK_GRID_EXPORT": "", "STAT_WEEK_GRID_IMPORT": "", "STAT_WEEK_HOME": "", "STAT_WEEK_BAT_HOME": "",
+                "STAT_MONTH_SOLAR": "", "STAT_MONTH_CHARGE": "", "STAT_MONTH_DISCHARGE": "", "STAT_MONTH_SOLAR_HOME": "",
+                "STAT_MONTH_GRID_EXPORT": "", "STAT_MONTH_GRID_IMPORT": "", "STAT_MONTH_HOME": "", "STAT_MONTH_BAT_HOME": "",
+                "STAT_YEAR_SOLAR": "", "STAT_YEAR_CHARGE": "", "STAT_YEAR_DISCHARGE": "", "STAT_YEAR_SOLAR_HOME": "",
+                "STAT_YEAR_GRID_EXPORT": "", "STAT_YEAR_GRID_IMPORT": "", "STAT_YEAR_HOME": "", "STAT_YEAR_BAT_HOME": "",
+                "_SECTION_STAT_SB1": "--- SOLARBANK 1 STATISTICS (Unit: kWh) ---",
+                "STAT_SB1_DAY_SOLAR": "", "STAT_SB1_DAY_CHARGE": "", "STAT_SB1_DAY_DISCHARGE": "",
+                "STAT_SB1_WEEK_SOLAR": "", "STAT_SB1_WEEK_CHARGE": "", "STAT_SB1_WEEK_DISCHARGE": "",
+                "STAT_SB1_MONTH_SOLAR": "", "STAT_SB1_MONTH_CHARGE": "", "STAT_SB1_MONTH_DISCHARGE": "",
+                "STAT_SB1_YEAR_SOLAR": "", "STAT_SB1_YEAR_CHARGE": "", "STAT_SB1_YEAR_DISCHARGE": "",
+                "_SECTION_STAT_SB2": "--- SOLARBANK 2 STATISTICS (Unit: kWh) ---",
+                "STAT_SB2_DAY_SOLAR": "", "STAT_SB2_DAY_CHARGE": "", "STAT_SB2_DAY_DISCHARGE": "",
+                "STAT_SB2_WEEK_SOLAR": "", "STAT_SB2_WEEK_CHARGE": "", "STAT_SB2_WEEK_DISCHARGE": "",
+                "STAT_SB2_MONTH_SOLAR": "", "STAT_SB2_MONTH_CHARGE": "", "STAT_SB2_MONTH_DISCHARGE": "",
+                "STAT_SB2_YEAR_SOLAR": "", "STAT_SB2_YEAR_CHARGE": "", "STAT_SB2_YEAR_DISCHARGE": "",
+                "_SECTION_STAT_SB3": "--- SOLARBANK 3 STATISTICS (Unit: kWh) ---",
+                "STAT_SB3_DAY_SOLAR": "", "STAT_SB3_DAY_CHARGE": "", "STAT_SB3_DAY_DISCHARGE": "",
+                "STAT_SB3_WEEK_SOLAR": "", "STAT_SB3_WEEK_CHARGE": "", "STAT_SB3_WEEK_DISCHARGE": "",
+                "STAT_SB3_MONTH_SOLAR": "", "STAT_SB3_MONTH_CHARGE": "", "STAT_SB3_MONTH_DISCHARGE": "",
+                "STAT_SB3_YEAR_SOLAR": "", "STAT_SB3_YEAR_CHARGE": "", "STAT_SB3_YEAR_DISCHARGE": "",
+                "_SECTION_STAT_SB4": "--- SOLARBANK 4 STATISTICS (Unit: kWh) ---",
+                "STAT_SB4_DAY_SOLAR": "", "STAT_SB4_DAY_CHARGE": "", "STAT_SB4_DAY_DISCHARGE": "",
+                "STAT_SB4_WEEK_SOLAR": "", "STAT_SB4_WEEK_CHARGE": "", "STAT_SB4_WEEK_DISCHARGE": "",
+                "STAT_SB4_MONTH_SOLAR": "", "STAT_SB4_MONTH_CHARGE": "", "STAT_SB4_MONTH_DISCHARGE": "",
+                "STAT_SB4_YEAR_SOLAR": "", "STAT_SB4_YEAR_CHARGE": "", "STAT_SB4_YEAR_DISCHARGE": ""
             }, null, 2) }
-        },
-        credentials: {
-            password: { type: "password" }
         },
         inputs: 1,
         outputs: 3,
         outputLabels: [
             "OpenCCU SysVar / Universal ({ topic, payload })",
-            "Cloud Rohdaten (scen_info & energy_analysis)",
-            "System / Fehler / SITE_IDs"
+            "Cloud Raw Data (scen_info & energy_analysis)",
+            "System / Alarms / SITE_IDs"
         ],
         icon: "font-awesome/fa-sun-o",
-        label: function() {
-            return this.name || "Anker SOLIX OpenCCU";
-        },
-        oneditprepare: function() {
-            $("#node-input-sysvarsJson").typedInput({
-                type: "json",
-                types: ["json"]
-            });
+        paletteLabel: "Anker SOLIX",
+        label: function () { return this.name || "Anker SOLIX"; },
+        oneditprepare: function () {
+            $("#node-input-sysvarsJson").typedInput({ type: "json", types: ["json"] });
         }
     });
 </script>
 <script type="text/html" data-template-name="anker-solix">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
-        <input type="text" id="node-input-name" placeholder="Anker SOLIX OpenCCU">
+        <input type="text" id="node-input-name" placeholder="Anker SOLIX">
     </div>
     <div class="form-row">
-        <label for="node-input-email"><i class="fa fa-envelope"></i> Anker E-Mail</label>
-        <input type="text" id="node-input-email" placeholder="name@beispiel.de">
+        <label for="node-input-server"><i class="fa fa-cog"></i> Account</label>
+        <input type="text" id="node-input-server">
     </div>
     <div class="form-row">
-        <label for="node-input-password"><i class="fa fa-lock"></i> Passwort</label>
-        <input type="password" id="node-input-password">
-    </div>
-    <div class="form-row">
-        <label for="node-input-siteId"><i class="fa fa-home"></i> SITE_ID (optional)</label>
-        <input type="text" id="node-input-siteId" placeholder="Leer lassen für automatische Erkennung">
+        <label for="node-input-siteId"><i class="fa fa-home"></i> SITE_ID (opt.)</label>
+        <input type="text" id="node-input-siteId" placeholder="Leave empty for auto-detection">
     </div>
     <div class="form-row">
         <label for="node-input-powerdockSn"><i class="fa fa-microchip"></i> Wakeup SN (opt.)</label>
-        <input type="text" id="node-input-powerdockSn" placeholder="Automatisch (Power Dock / Smart Meter)">
+        <input type="text" id="node-input-powerdockSn" placeholder="Auto (Power Dock / Smart Meter)">
     </div>
     <div class="form-row">
         <label for="node-input-powerdockPn"><i class="fa fa-barcode"></i> Wakeup PN (opt.)</label>
@@ -195,7 +99,7 @@
     </div>
     <div class="form-row">
         <label for="node-input-sb1Sn"><i class="fa fa-battery-full"></i> Solarbank 1 SN</label>
-        <input type="text" id="node-input-sb1Sn" placeholder="Optional (wird automatisch erkannt)">
+        <input type="text" id="node-input-sb1Sn" placeholder="Optional (Solarbank 2 / 3 / 4 AE103)">
     </div>
     <div class="form-row">
         <label for="node-input-sb2Sn"><i class="fa fa-battery-three-quarters"></i> Solarbank 2 SN</label>
@@ -216,17 +120,11 @@
 </script>
 
 <script type="text/html" data-help-name="anker-solix">
-    <p>Liest 120 Live-Daten (<code>W</code>, <code>%</code>) und Energie-Statistiken (<code>kWh</code>) von <b>Anker SOLIX Solar- &amp; Speichersystemen</b> (Solarbank 2/3, Solarbank Max / Max AC, Power Dock AE100, Smart Meter) aus der EU-Cloud aus.</p>
-    <h3>Ausgänge</h3>
-    <ol>
-        <li><b>Universal-Ausgang (<code>{ topic, payload }</code>):</b> Sendet bei Wertänderung sowie alle 300 Sekunden als Stützpunkt an OpenCCU (<code>ccu-sysvar</code>), MQTT-Broker (<code>mqtt out</code>), InfluxDB oder KNX/Loxone.</li>
-        <li><b>Cloud Rohdaten:</b> Vollständige JSON-Objekte (<code>scen_info</code> &amp; <code>energy_analysis</code>) zur freien Weiterverarbeitung.</li>
-        <li><b>System / SITE_IDs:</b> Fehlermeldungen oder die Anlagenliste bei <code>msg.topic = "get_sites"</code>.</li>
-    </ol>
-    <h3>Steuerbefehle (Eingang)</h3>
+    <p>Reads real-time data (<code>W</code>, <code>%</code>, Smart Meter status) and energy statistics (<code>kWh</code>) from <b>Anker SOLIX Solar &amp; Energy Storage Systems</b> (Power Dock <code>AE100</code>, Solarbank 2, Solarbank 3 Pro <code>A17C5</code>, Solarbank 4 E5000 Pro <code>AE103</code>, Solarbank Max &amp; Smart Meters).</p>
     <ul>
-        <li><code>msg.topic = "get_sites"</code>: Listet alle verfügbaren Anlagen (<code>SITE_ID</code>) an Ausgang 3 auf.</li>
-        <li><code>msg.topic = "get_stats"</code>: Ruft die Energie-Statistiken (<code>kWh</code>) sofort ab, ohne auf das 300-Sekunden-Intervall zu warten.</li>
-        <li><code>msg.topic = "set_wakeup"</code> mit <code>true</code>, <code>false</code> oder <code>"auto"</code>: Schaltet den MQTT-Echtzeit-Wakeup manuell ein, aus oder zurück auf Automatik.</li>
+        <li><b>Account:</b> Selects the central <code>anker-solix-config</code> account node.</li>
+        <li><b>Output 1:</b> Emits <code>{ topic, payload }</code> on value change + 300s heartbeat (for OpenCCU <code>ccu-sysvar</code>, MQTT, InfluxDB, KNX/Loxone). Supports English keys (<code>SITE_*</code>, <code>SB1_*</code>, <code>STAT_*</code>) as well as all legacy <code>1.0.x</code> keys.</li>
+        <li><b>Output 2:</b> Raw cloud JSON payloads (<code>scen_info</code> &amp; <code>energy_analysis</code>).</li>
+        <li><b>Output 3:</b> System messages, Smart Meter online/offline alarms, errors, and <code>SITE_ID</code> discovery (<code>get_sites</code>).</li>
     </ul>
 </script>
