@@ -9,7 +9,7 @@ module.exports = function (RED) {
         cn: "ankerpower-api-cn." + "anker.com"
     };
 
- const DEFAULT_PUB_KEY_HEX = "04c5c00c4f8d1197cc7c3167c52bf7acb054d722f0ef08dcd7e0883236e0d72a3868d9750cb47fa4619248f3d83f0f662671dadc6e2d31c2f41db0161651c7c076";
+    const DEFAULT_PUB_KEY_HEX = "04c5c00c4f8d1197cc7c3167c52bf7acb054d722f0ef08dcd7e0883236e0d72a3868d9750cb47fa4619248f3d83f0f662671dadc6e2d31c2f41db0161651c7c076";
 
     function encryptAnkerPassword(password, hexKey) {
         const ecdh = crypto.createECDH("prime256v1");
@@ -24,6 +24,15 @@ module.exports = function (RED) {
         };
     }
 
+    function getTimezoneOffsetStr() {
+        const offsetMin = -new Date().getTimezoneOffset();
+        const sign = offsetMin >= 0 ? "+" : "-";
+        const absMin = Math.abs(offsetMin);
+        const hh = String(Math.floor(absMin / 60)).padStart(2, "0");
+        const mm = String(absMin % 60).padStart(2, "0");
+        return "GMT" + sign + hh + ":" + mm;
+    }
+
     function AnkerSolixConfigNode(config) {
         RED.nodes.createNode(this, config);
         const node = this;
@@ -34,21 +43,28 @@ module.exports = function (RED) {
         node.password = (node.credentials && node.credentials.password) ? node.credentials.password : "";
 
         const apiHost = REGION_URLS[node.region] || REGION_URLS.eu;
+        const countryCode = (node.region === "eu") ? "DE" : node.region.toUpperCase();
         const globalCtx = node.context().global;
-        const cacheKey = "anker_session_v11_" + node.region + "_" + node.email.replace(/[^a-zA-Z0-9]/g, "_");
+        const cacheKey = "anker_session_v111_" + node.region + "_" + node.email.replace(/[^a-zA-Z0-9]/g, "_");
 
+        node.invalidateSession = function () {
+            globalCtx.set(cacheKey, null);
+        };
+
+        node.on("close", function () {
+            globalCtx.set(cacheKey, null);
+        });
         function rawHttpsPost(path, bodyObj, headersExtra) {
             return new Promise((resolve, reject) => {
                 const payload = JSON.stringify(bodyObj || {});
                 const headers = Object.assign({
                     "Content-Type": "application/json",
                     "Content-Length": Buffer.byteLength(payload),
-                    "Model-Type": "DESKTOP",
+                    "Country": countryCode,
+                    "Timezone": getTimezoneOffsetStr(),
                     "App-Name": "anker_power",
                     "Os-Type": "android",
-                    "version": "2.9.0",
-                    "Country": node.region.toUpperCase(),
-                    "Timezone": node.timezone
+                    "Model-Type": "DESKTOP"
                 }, headersExtra || {});
 
                 const req = https.request({
@@ -87,7 +103,7 @@ module.exports = function (RED) {
 
             const { encryptedPassword, clientPublicKey } = encryptAnkerPassword(node.password, DEFAULT_PUB_KEY_HEX);
             const loginRes = await rawHttpsPost("/passport/login", {
-                ab: node.region.toUpperCase(),
+                ab: countryCode,
                 client_secret_info: { public_key: clientPublicKey },
                 enc: 1,
                 email: node.email,
@@ -117,7 +133,10 @@ module.exports = function (RED) {
                 user_id: d.user_id,
                 auth_token: d.auth_token,
                 gtoken: gtoken,
-                token_expires_at: (Number(d.token_expires_at) || (Math.floor(Date.now() / 1000) + 86400)) * 1000,
+                token_expires_at: Math.min(
+                    (Number(d.token_expires_at) || (Math.floor(Date.now() / 1000) + 72000)) * 1000,
+                    Date.now() + (20 * 3600 * 1000)
+                ),
                 mqttInfo: mqttInfo
             };
             globalCtx.set(cacheKey, session);

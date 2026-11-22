@@ -37,15 +37,14 @@ Node-RED nodes to read real-time data (`W`, `%`, Smart Meter status), AC chargin
 👉 **[Read the full English Documentation (Installation, Migration, SysVars, MQTT & Control Commands)](README.en.md)**
 ---
 
-### Latest Release: `v1.1.0`
+#### Latest Release: v1.1.1 (Bugfix Release)
 
-* **Central Account Node (`anker-solix-config`) & Global Regions (`EU` / `US` / `AU` / `CN`):** Share one account across multiple sites via `SITE_ID` or separate primary owner & secondary read-only accounts.
-* **New Device Control Node (`anker-solix-control`):** Switch usage modes (`1` Self-Consumption, `2` Custom with 24h fallback schedule, `3` Smart Plug, `7` AI Smart Mode) and standalone output power (`set_output_power`), with automatic instant wake-up refresh and member-site protection (`ms_type !== 1`).
-* **126 Data Keys + AC Charging & Smart Meter Alarm:** Added `SITE_AC_CHARGE` / `SB1_AC_CHARGE`..`SB4_AC_CHARGE` (for Solarbank 3 Pro `A17C5` & Solarbank 4 `AE103`) and `SITE_SMARTMETER_ONLINE` (`1`/`0`) with one-shot `alarm/smartmeter_offline` alerts on Output 3.
-* **Expanded Hardware & Full English Localization:** Added **Solarbank 4 E5000 Pro (`AE103`)** & **SOLIX E10 (`A17E1`)**, standardized all UI/status/error texts and keys to English while keeping full `v1.0.x` legacy key compatibility.
-* **Migration Note (`v1.0.x` -> `v1.1.0`):** After updating, open your existing `Anker SOLIX` node once, click the pencil icon next to **Account**, and enter your **Email**, **Password**, and **Region** in the new `anker-solix-config` node. All existing SysVars mappings, `SITE_ID`, serial numbers, and wires remain intact.
-
-📜 **[View Full Version History in CHANGELOG.md](CHANGELOG.md)**
+* **24/7 MQTT Wakeup & Session Cache Fix:** Fixed an issue introduced in v1.1.0 where cloud headers (version: 2.9.0) and persistent session caching across deploys could cause Anker Cloud standby throttling (5-minute waves) when the smartphone app was closed. Updates and deploys now automatically refresh the session and keep continuous 5-second updates active.
+* **Central Account Node (anker-solix-config) & Global Regions (EU / US / AU / CN):** Share one account across multiple sites via SITE_ID or separate primary owner & secondary read-only accounts.
+* **Device Control Node (anker-solix-control):** Switch usage modes (1 Self-Consumption, 2 Custom with 24h fallback schedule, 3 Smart Plug, 7 AI Smart Mode) and standalone output power (set_output_power), with automatic instant wake-up refresh and member-site protection (ms_type !== 1).
+* **126 Data Keys + AC Charging & Smart Meter Alarm:** Includes SITE_AC_CHARGE / SB1_AC_CHARGE..SB4_AC_CHARGE (for Solarbank 3 Pro A17C5 & Solarbank 4 AE103) and SITE_SMARTMETER_ONLINE (1/0) with one-shot alarm/smartmeter_offline alerts on Output 3.
+* **Expanded Hardware & Full English Localization:** Supports **Solarbank 4 E5000 Pro (AE103)** & **SOLIX E10 (A17E1)**, standardized all UI/status/error texts and keys to English while keeping full v1.0.x legacy key compatibility.
+* **Migration Note (v1.0.x -> v1.1.x):** After updating from v1.0.x, open your existing Anker SOLIX node once, click the pencil icon next to **Account**, and enter your **Email**, **Password**, and **Region** in the new anker-solix-config node. All existing SysVars mappings, SITE_ID, serial numbers, and wires remain intact.
 
 ---
 

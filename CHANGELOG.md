@@ -2,6 +2,16 @@
 
 All notable changes to `node-red-contrib-anker-solix` are documented in this file.
 
+####  - 2026-11-22
+
+#### Fixed
+
+* **24/7 MQTT Wakeup & Cloud Header Compatibility (anker-solix-config & anker-solix):** 
+
+  * Removed the artificial "version": "2.9.0" HTTP header and restored dynamic GMT±HH:MM timezone offset headers in anker-solix-config.js, preventing Anker Cloud standby throttling (5-minute polling waves) when no smartphone app is active.
+  * Added automatic session cache invalidation on MQTT connection errors (node.server.invalidateSession()) in anker-solix.js.
+  * Updated session cache key (anker_session_v111_*) and added a close lifecycle hook in anker-solix-config.js so package updates and Node-RED deploys immediately initialize a fresh session without requiring manual account toggling.
+
 ## - 2026-11-21
 
 ### Added

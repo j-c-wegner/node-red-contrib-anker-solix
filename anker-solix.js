@@ -161,7 +161,10 @@ module.exports = function(RED) {
                             setTimeout(() => { try { client.end(true); } catch (e) {} }, 1500);
                         });
                     });
-                    client.on("error", () => { try { client.end(true); } catch (e) {} });
+                    client.on("error", () => {
+                        if (node.server && node.server.invalidateSession) { node.server.invalidateSession(); }
+                        try { client.end(true); } catch (e) {}
+                    });
                     return "OK + Wakeup [" + modeLabel + "] (next in " + Math.round(randomDelayMs / 1000) + "s)";
                 } catch (e) {
                     return "OK (Cloud active)";
