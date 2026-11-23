@@ -35,10 +35,33 @@ module.exports = function(RED) {
         const node = this;
 
         node.server = RED.nodes.getNode(config.server);
+        node.wakeupServer = config.wakeupServer ? RED.nodes.getNode(config.wakeupServer) : null;
         if (!node.server) {
             node.status({ fill: "red", shape: "ring", text: "No account config selected" });
             return;
         }
+
+        const nodeTag = String(node.id || "").replace(/[^a-zA-Z0-9_-]/g, "").slice(-8) || "node";
+
+        function resolveSiteId() {
+            return (config.siteId || "").trim()
+                || (node.server && node.server.siteId ? String(node.server.siteId).trim() : "")
+                || node.context().get("savedSiteId")
+                || "";
+        }
+
+        node.on("close", function () {
+            node.context().set("busySince", 0);
+            const activeSiteId = resolveSiteId();
+            if (activeSiteId) {
+                node.context().global.set("anker_wakeup_reset_" + activeSiteId, true);
+            }
+            if ((config.siteId || "").trim() !== (node.context().get("savedSiteId") || "")) {
+                node.context().set("savedSiteId", "");
+                node.context().set("savedPowerdockSn", "");
+                node.context().set("savedSolarbanks", new Array());
+            }
+        });
 
         let hash = 0;
         for (let i = 0; i < node.id.length; i++) {
@@ -95,6 +118,7 @@ module.exports = function(RED) {
                     node.send([{ topic: svName, payload: val }, null, null]);
                 }
             }
+
             function isAnkerSmartMeter(dev) {
                 if (!dev) { return false; }
                 const pn = String(dev.device_pn || "").toUpperCase();
@@ -107,8 +131,14 @@ module.exports = function(RED) {
                 return dev ? new Array("AE111", "A17E1", "A17E2", "B17E2").indexOf(String(dev.device_pn || "").toUpperCase()) !== -1 : false;
             }
 
-            function triggerMqttWakeup(session, siteId, devSn, devPn, modeLabel, forceWake) {
+            async function triggerMqttWakeup(defaultSession, siteId, devSn, devPn, modeLabel, forceWake) {
                 const now = Date.now();
+                const wakeServerNode = node.wakeupServer || node.server;
+                let session = defaultSession;
+                if (node.wakeupServer) {
+                    session = await node.wakeupServer.getAuthSession(false);
+                }
+
                 const emailKey = String(session.email || "user").replace(/[^a-zA-Z0-9]/g, "_");
                 const wakeKey = "anker_wakeup_" + emailKey + "_" + devSn;
                 const resetKey = "anker_wakeup_reset_" + siteId;
@@ -126,8 +156,8 @@ module.exports = function(RED) {
                 const randomDelayMs = (180 + Math.floor(Math.random() * 61)) * 1000;
                 global.set(wakeKey, now + randomDelayMs);
 
-                node.server.apiRequest("/power_service/v1/site/get_site_homepage", {}).catch(() => {});
-                node.server.apiRequest("/power_service/v1/site/get_site_detail", { site_id: siteId }).catch(() => {});
+                wakeServerNode.apiRequest("/power_service/v1/site/get_site_homepage", {}).catch(() => {});
+                wakeServerNode.apiRequest("/power_service/v1/site/get_site_detail", { site_id: siteId }).catch(() => {});
 
                 const m = session.mqttInfo;
                 if (!m || !m.endpoint_addr || !m.private_key) { return "OK (Cloud active)"; }
@@ -135,7 +165,7 @@ module.exports = function(RED) {
                 try {
                     const seq = (context.get("mqttSeq") || 1) + 1;
                     context.set("mqttSeq", seq);
-                    const cid = "android-anker_power-" + session.user_id + "-" + m.certificate_id;
+                    const cid = "android-anker_power-" + session.user_id + "-" + m.certificate_id + "-" + nodeTag;
                     const randomSess = Math.floor(1000 + Math.random() * 9000) + "-" + Math.floor(1000 + Math.random() * 9000);
                     const opts = {
                         clientId: cid, cert: m.certificate_pem, key: m.private_key,
@@ -162,7 +192,7 @@ module.exports = function(RED) {
                         });
                     });
                     client.on("error", () => {
-                        if (node.server && node.server.invalidateSession) { node.server.invalidateSession(); }
+                        if (wakeServerNode && wakeServerNode.invalidateSession) { wakeServerNode.invalidateSession(); }
                         try { client.end(true); } catch (e) {}
                     });
                     return "OK + Wakeup [" + modeLabel + "] (next in " + Math.round(randomDelayMs / 1000) + "s)";
@@ -179,7 +209,7 @@ module.exports = function(RED) {
                     if (startOffsetMs > 0) { await new Promise((r) => setTimeout(r, startOffsetMs)); }
                     const session = await node.server.getAuthSession(false);
 
-                    let SITE_ID = (config.siteId || "").trim() || (node.server.siteId || "").trim() || context.get("savedSiteId") || "";
+                    let SITE_ID = resolveSiteId();
                     if (!SITE_ID || isGetSites) {
                         const siteRes = await node.server.apiRequest("/power_service/v1/site/get_site_list", {});
                         if (siteRes && siteRes.code === 0 && siteRes.data && siteRes.data.site_list) {
@@ -288,7 +318,7 @@ module.exports = function(RED) {
                     if (wakeupOverride === false) { wakeupStatus = "OK (Wakeup off)"; }
                     else if (!shouldWakeup) { wakeupStatus = "OK (Battery protection: wakeup off)"; }
                     if (shouldWakeup && DEVICE_SN) {
-                        wakeupStatus = triggerMqttWakeup(session, SITE_ID, DEVICE_SN, DEVICE_PN, WAKEUP_MODE || "Auto", isStalled);
+                        wakeupStatus = await triggerMqttWakeup(session, SITE_ID, DEVICE_SN, DEVICE_PN, WAKEUP_MODE || "Auto", isStalled);
                     }
 
                     if (scen.home_load_power !== undefined) { emitSysVar("SITE_HOME_LOAD", Number(scen.home_load_power)); }
@@ -397,8 +427,9 @@ module.exports = function(RED) {
                     }
                     node.status({ fill: "green", shape: "dot", text: wakeupStatus });
                 } catch (err) {
-                    node.status({ fill: "red", shape: "dot", text: err.message.substring(0, 32) });
-                    node.send([null, null, { topic: "error", payload: err.message }]);
+                    const errMsg = (err && err.message) ? String(err.message) : String(err || "Unknown error");
+                    node.status({ fill: "red", shape: "dot", text: errMsg.substring(0, 32) });
+                    node.send([null, null, { topic: "error", payload: errMsg }]);
                 } finally {
                     context.set("busySince", 0);
                 }

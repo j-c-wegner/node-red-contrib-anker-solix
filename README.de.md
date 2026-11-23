@@ -7,7 +7,7 @@
 ## Inhaltsverzeichnis
 
 1. [Installation](#installation)
-2. [Update-Hinweis (`v1.0.x` → `v1.1.0`)](#update-hinweis-v10x--v110)
+2. [Update-Hinweis (`v1.0.x` → `v1.1.x`)](#update-hinweis-v10x--v11x)
 3. [Grundeinrichtung & Account-Node (`anker-solix-config`)](#grundeinrichtung--account-node-anker-solix-config)
 4. [Mehrere Anlagen einrichten (`SITE_ID` & `get_sites`)](#mehrere-anlagen-einrichten-site_id--get_sites)
 5. [Steuerungs-Baustein (`anker-solix-control`)](#steuerungs-baustein-anker-solix-control)
@@ -23,9 +23,7 @@
 
 Installiere das Paket direkt über den **Node-RED Paletten-Manager** (Suche nach `node-red-contrib-anker-solix`) oder per SSH / Terminal in deinem Node-RED-Datenverzeichnis (z. B. `/usr/local/addons/redmatic/var` unter OpenCCU / RedMatic):
 
-```bash
-npm install node-red-contrib-anker-solix
-```
+`npm install node-red-contrib-anker-solix`
 
 Importiere anschließend einen fertigen Beispielflow über **Node-RED Menü > Import > Beispiele > node-red-contrib-anker-solix**.
 
@@ -33,7 +31,7 @@ Importiere anschließend einen fertigen Beispielflow über **Node-RED Menü > Im
 
 ---
 
-## Update-Hinweis (`v1.0.x` → `v1.1.0`)
+## Update-Hinweis (`v1.0.x` → `v1.1.x`)
 
 Ab `v1.1.0` sind die Cloud-Zugangsdaten in einen eigenen zentralen **Account-Config-Node (`anker-solix-config`)** ausgelagert, damit mehrere Daten- und Steuerungs-Nodes ein gemeinsames Konto nutzen können:
 
@@ -54,7 +52,7 @@ Ab `v1.1.0` sind die Cloud-Zugangsdaten in einen eigenen zentralen **Account-Con
    * **Timezone:** Zeitzone deiner Anlage (z. B. `Europe/Berlin`).
 3. **Einzelne Anlage (`ms_type === 1`):** Lasse das Feld `SITE_ID (opt.)` im Daten-Baustein leer. Der Baustein erkennt deine Hauptanlage automatisch und speichert die ID lokal zwischen.
 4. **Seriennummern der Geräte:** Lasse `Wakeup SN/PN` und `Solarbank 1–4 SN` für die automatische Erkennung leer oder trage gezielt Seriennummern ein, um die Auto-Erkennung zu überschreiben.
-5. **Konten-Empfehlung (Zweitkonto vs. Hauptkonto):** Für das reine 24/7-Auslesen von Live- und Statistikdaten wird ein kostenloses, geteiltes **Zweitkonto** empfohlen (maximale Sicherheit und saubere Trennung). Das **Hauptkonto (Eigentümer)** ist ausschließlich für den Steuerungs-Baustein **`Anker SOLIX Control`** erforderlich.
+5. **Konten-Empfehlung (Zweitkonto, Wakeup Account & Hauptkonto):** Für das reine 24/7-Auslesen von Live- und Statistikdaten wird ein kostenloses, geteiltes **Zweitkonto** unter **Account** empfohlen. Über das optionale Feld **Wakeup Account** kannst du zusätzlich das **Hauptkonto (Eigentümer, `ms_type === 1`)** für die MQTT-Wakeup-Pings hinterlegen, damit kontinuierliche 5-Sekunden-Werte auch nach App-Änderungen stabil bleiben. Das **Hauptkonto** ist außerdem für den Steuerungs-Baustein **`Anker SOLIX Control`** erforderlich.
 
 ![Baustein Konfiguration](images/node-config.png)
 ---
@@ -77,14 +75,14 @@ Du benötigst für mehrere Anlagen **nur einen einzigen Account-Config-Node** (s
 Mit dem Baustein **`Anker SOLIX Control`** lassen sich Betriebsmodi und Ausgangsleistungen direkt aus Node-RED heraus umschalten. Er unterstützt automatisch **Power Dock (`AE100`)**, **Solarbank 4 E5000 Pro (`AE103`)**, **Solarbank 3 Pro (`A17C5`)**, **Solarbank 2** sowie **Solarbank 1 (`A17C0`)**.
 
 * **Wichtig:** Für Schreibbefehle muss im Control-Node das **Hauptkonto (Eigentümer, `ms_type === 1`)** ausgewählt sein. Bei geteilten Mitbenutzer-Anlagen meldet der Baustein automatisch, dass nur der Eigentümer steuern darf.
-* **Sofort-Aktualisierung:** Nach jedem erfolgreichen Steuerbefehl wird der 5s-Wakeup-Lock der Anlage sofort zurückgesetzt, sodass der Daten-Baustein den neuen Zustand unmittelbar ausliest.
+* **Sofort-Aktualisierung:** Nach jedem erfolgreichen Steuerbefehl wird der Wakeup-Lock der Anlage sofort zurückgesetzt, sodass der Daten-Baustein den neuen Zustand unmittelbar ausliest.
 
 ### Unterstützte Befehle (`Command` bzw. `msg.topic`)
 
 | Befehl (`msg.topic`) | Werte (`msg.payload`) | Beschreibung |
 | :--- | :--- | :--- |
 | **`set_usage_mode`** | `1`, `2`, `3` oder `7` | Wechselt den Betriebsmodus der Anlage:<br>• `1` = **Self-Consumption / Smart Meter** (Eigenverbrauch)<br>• `2` = **Custom Mode / Schedule** (Benutzerdefiniert / Manuell – legt automatisch einen 24h-Standard-Zeitplan `00:00–24:00` an, falls noch keiner existiert; individuelle Zeitfenster in der Anker-App pflegen)<br>• `3` = **Smart Plug / Time-of-Use**<br>• `7` = **Smart Mode / AI EMS** (KI-Modus) |
-| **`set_output_power`** | `0` .. `4800` *(Watt)* | Setzt die Einspeise-/Ausgangsleistung in Watt (primär für Einzel-Solarbanks ohne Power Dock; wird automatisch auf den Geräteschritt `step` gerundet). |
+| **`set_output_power`** | `0` .. `4800` *(Watt)* | Setzt die Einspeise-/Ausgangsleistung in Watt (primär für Einzel-Solarbanks ohne Power Dock; wird auf `0..800 W` bei Gen 1 bzw. `0..max_load` / `4800 W` begrenzt und auf den Geräteschritt `step` gerundet). |
 | **`from_msg`** | `{ command, value }` | Dynamische Steuerung per JSON-Objekt oder direkt über `msg.topic` + `msg.payload`. |
 | **`get_params`** | *(beliebig)* | Liest die aktuellen Geräteparameter (`param_type` `6` bzw. `4`) zur Diagnose aus. |
 
@@ -96,6 +94,7 @@ Anker SOLIX Solarbanks wechseln nachts in einen **Tiefschlafmodus (Sleep Mode)**
 
 * **Anlagen mit Power Dock (`AE100`), Anker Smart Meter (`A17X7`, `A17X8`, `AE1X0`, `AE1R0`, `SHEM3`) oder 230V-Heimspeicher (`AE111`, `A17E1`, `A17E2`, `B17E2`):** Diese Geräte hängen dauerhaft am Hausnetz. Der Baustein nutzt sie automatisch als Wakeup-Master (`cmd: 17` mit Zufalls-Jitter `3–4 Min.` sowie automatischem Stillstands-Re-Trigger nach 90 Sekunden) für lückenlose 5-Sekunden-Echtzeitdaten, während verbundene Solarbanks sicher ruhen dürfen.
 * **Reine Solarbank-Anlagen (ohne Power Dock / Anker Smart Meter):** Der Baustein schaltet den MQTT-Wakeup ab Werk automatisch aus (`OK (Battery protection: wakeup off)`).
+* **Hinweis bei Rückfall auf 5-Minuten-Werte (Konstellationsbestätigung):** Falls trotz aktivem MQTT-Wakeup wieder 5-Minuten-Wellen im Verlauf auftreten, öffne die Anker-App einmal mit dem **Hauptkonto (`ms_type === 1`)** und prüfe/bestätige dort die Geräte- bzw. Anlagenkonstellation.
 * **Smart-Meter-Ausfall-Überwachung:** Der Datenpunkt `SITE_SMARTMETER_ONLINE` meldet `1` (online) oder `0` (offline / 200W-Notbetrieb aktiv). Zusätzlich sendet **Ausgang 3** bei jedem Statuswechsel einmalig eine Alarm-Nachricht (`msg.topic = "alarm/smartmeter_offline"` bzw. `"alarm/smartmeter_online"`).
 * **Laufzeit-Topics am Daten-Baustein:**
   * `msg.topic = "set_wakeup"`, `msg.payload = true` / `false` / `"auto"` (MQTT-Wakeup manuell ein-, ausschalten oder zurück auf Automatik)
@@ -116,13 +115,14 @@ Für jeden belegten Schlüssel sendet **Ausgang 1** bei Wertänderung – sowie 
 | **MQTT-Broker** *(Home Assistant, ioBroker)* | `"SITE_HOME_LOAD": "anker/solix/home_load"` | **`mqtt out`** (Topic im MQTT-Node leer lassen; nutzt automatisch `msg.topic`) |
 | **InfluxDB / Grafana** | `"SITE_HOME_LOAD": "home_load_w"` | **`influxdb out`** (schreibt `msg.payload` unter dem Feldnamen aus `msg.topic`) |
 | **KNX / Loxone** | `"SITE_HOME_LOAD": "1/2/10"` | **`knxUltimate`** oder **`loxone-control-out`** |
+
 ---
 
 ## Kopierbare JSON-Vorlage (126 Keys)
 
 ```json
 {
-  "_INFO_1": "Enter the name of your OpenCCU system variable (or MQTT topic) after the colon. Empty fields are ignored.",
+  "_INFO_1": "Trage nach dem Doppelpunkt den Namen deiner OpenCCU-Systemvariable (oder das MQTT-Topic) ein. Leere Felder werden ignoriert.",
   "_SECTION_SITE": "--- SITE / TOTAL LIVE (Unit: W, % or 0/1) ---",
   "SITE_HOME_LOAD": "", "SITE_GRID_IMPORT": "", "SITE_GRID_EXPORT": "", "SITE_SOC": "",
   "SITE_CHARGE": "", "SITE_AC_CHARGE": "", "SITE_SOLAR": "", "SITE_DISCHARGE": "",
@@ -170,9 +170,6 @@ Für jeden belegten Schlüssel sendet **Ausgang 1** bei Wertänderung – sowie 
   "STAT_SB4_YEAR_SOLAR": "", "STAT_SB4_YEAR_CHARGE": "", "STAT_SB4_YEAR_DISCHARGE": ""
 }
 ```
-
----
-
 ## Vollständige Übersicht aller 126 Datenpunkte
 
 *(Alle bisherigen `1.0.x`-Keys wie `PD_HAUSLAST`, `SB1_LADEN`, `STAT_GES_TAG_*` werden intern automatisch über die Legacy-Alias-Brücke weiterhin unterstützt.)*

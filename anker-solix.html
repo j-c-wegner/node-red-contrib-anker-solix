@@ -5,6 +5,7 @@
         defaults: {
             name: { value: "Anker SOLIX" },
             server: { value: "", type: "anker-solix-config", required: true },
+            wakeupServer: { value: "", type: "anker-solix-config", required: false },
             siteId: { value: "" },
             powerdockSn: { value: "" },
             powerdockPn: { value: "" },
@@ -48,7 +49,7 @@
                 "STAT_SB2_DAY_SOLAR": "", "STAT_SB2_DAY_CHARGE": "", "STAT_SB2_DAY_DISCHARGE": "",
                 "STAT_SB2_WEEK_SOLAR": "", "STAT_SB2_WEEK_CHARGE": "", "STAT_SB2_WEEK_DISCHARGE": "",
                 "STAT_SB2_MONTH_SOLAR": "", "STAT_SB2_MONTH_CHARGE": "", "STAT_SB2_MONTH_DISCHARGE": "",
-                "STAT_SB2_YEAR_SOLAR": "", "STAT_SB2_YEAR_CHARGE": "", "STAT_SB2_YEAR_DISCHARGE": "",
+                "STAT_SB2_YEAR_SOLAR": "", "STAT_SB2_YEAR_CHARGE": "", "STAT_SB2_YEAR_CHARGE": "",
                 "_SECTION_STAT_SB3": "--- SOLARBANK 3 STATISTICS (Unit: kWh) ---",
                 "STAT_SB3_DAY_SOLAR": "", "STAT_SB3_DAY_CHARGE": "", "STAT_SB3_DAY_DISCHARGE": "",
                 "STAT_SB3_WEEK_SOLAR": "", "STAT_SB3_WEEK_CHARGE": "", "STAT_SB3_WEEK_DISCHARGE": "",
@@ -84,6 +85,10 @@
     <div class="form-row">
         <label for="node-input-server"><i class="fa fa-cog"></i> Account</label>
         <input type="text" id="node-input-server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-wakeupServer"><i class="fa fa-bell"></i> Wakeup Account (opt.)</label>
+        <input type="text" id="node-input-wakeupServer">
     </div>
     <div class="form-row">
         <label for="node-input-siteId"><i class="fa fa-home"></i> SITE_ID (opt.)</label>
@@ -122,7 +127,8 @@
 <script type="text/html" data-help-name="anker-solix">
     <p>Reads real-time data (<code>W</code>, <code>%</code>, Smart Meter status) and energy statistics (<code>kWh</code>) from <b>Anker SOLIX Solar &amp; Energy Storage Systems</b> (Power Dock <code>AE100</code>, Solarbank 2, Solarbank 3 Pro <code>A17C5</code>, Solarbank 4 E5000 Pro <code>AE103</code>, Solarbank Max &amp; Smart Meters).</p>
     <ul>
-        <li><b>Account:</b> Selects the central <code>anker-solix-config</code> account node.</li>
+        <li><b>Account:</b> Selects the central <code>anker-solix-config</code> account node used for HTTPS polling.</li>
+        <li><b>Wakeup Account (optional):</b> Optional primary owner <code>anker-solix-config</code> node used solely for MQTT wake-up pings when reading via a secondary account.</li>
         <li><b>Output 1:</b> Emits <code>{ topic, payload }</code> on value change + 300s heartbeat (for OpenCCU <code>ccu-sysvar</code>, MQTT, InfluxDB, KNX/Loxone). Supports English keys (<code>SITE_*</code>, <code>SB1_*</code>, <code>STAT_*</code>) as well as all legacy <code>1.0.x</code> keys.</li>
         <li><b>Output 2:</b> Raw cloud JSON payloads (<code>scen_info</code> &amp; <code>energy_analysis</code>).</li>
         <li><b>Output 3:</b> System messages, Smart Meter online/offline alarms, errors, and <code>SITE_ID</code> discovery (<code>get_sites</code>).</li>

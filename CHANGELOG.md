@@ -2,17 +2,32 @@
 
 All notable changes to `node-red-contrib-anker-solix` are documented in this file.
 
-####  - 2026-11-22
+## [1.1.2] - 2026-11-23
 
-#### Fixed
+### Added
+- **Dedicated Wakeup Account (`wakeupServer`) in `anker-solix`:** Allows using a secondary read-only account for HTTPS polling while routing MQTT `cmd: 17` wake-up pings and app detail/homepage pings through a separate primary owner account (`ms_type === 1`) so continuous 5-second updates remain active without smartphone app session conflicts or 5-minute standby waves.
+- **Safer Packaging & Build Exclusion:** Added an explicit `files` allowlist in `package.json` and excluded `node_modules` in `build.bat` when building `.tgz` packages.
 
-* **24/7 MQTT Wakeup & Cloud Header Compatibility (anker-solix-config & anker-solix):** 
+### Changed
+- **Control Power Clamping (`anker-solix-control`):** Added `clampPower()` to bound output power cleanly (`0..800 W` for `SB_GEN1` / `A17C0` and `0..max_load` / `4800 W` default cap otherwise) and reset the site wake-up lock (`anker_wakeup_reset_<siteId>`) after write operations.
+- **Unique MQTT Client IDs & Lifecycle Cleanup:** Appended a sanitized per-node `nodeTag` to MQTT `clientId`s, made the `catch` error handler resilient against non-Error values, and extended the `close` hook in `anker-solix.js` to reset `busySince`, trigger a wake-up reset, and clear cached site/device IDs when `siteId` changes.
 
-  * Removed the artificial "version": "2.9.0" HTTP header and restored dynamic GMT±HH:MM timezone offset headers in anker-solix-config.js, preventing Anker Cloud standby throttling (5-minute polling waves) when no smartphone app is active.
-  * Added automatic session cache invalidation on MQTT connection errors (node.server.invalidateSession()) in anker-solix.js.
-  * Updated session cache key (anker_session_v111_*) and added a close lifecycle hook in anker-solix-config.js so package updates and Node-RED deploys immediately initialize a fresh session without requiring manual account toggling.
+### Fixed
+- Fixed a duplicate `STAT_SB2_YEAR_CHARGE` key in the default SysVars JSON template of `anker-solix.html` (replaced with `STAT_SB2_YEAR_DISCHARGE`).
 
-## - 2026-11-21
+---
+
+## [1.1.1] - 2026-11-22
+
+### Fixed
+* **24/7 MQTT Wakeup & Cloud Header Compatibility (anker-solix-config & anker-solix):**
+  * Removed the artificial `"version": "2.9.0"` HTTP header and restored dynamic `GMT±HH:MM` timezone offset headers in `anker-solix-config.js`, preventing Anker Cloud standby throttling (5-minute polling waves) when no smartphone app is active.
+  * Added automatic session cache invalidation on MQTT connection errors (`node.server.invalidateSession()`) in `anker-solix.js`.
+  * Updated session cache key (`anker_session_v111_*`) and added a `close` lifecycle hook in `anker-solix-config.js` so package updates and Node-RED deploys immediately initialize a fresh session without requiring manual account toggling.
+
+---
+
+## [1.1.0] - 2026-11-21
 
 ### Added
 - **3-Node Architecture & Central Account Config (`anker-solix-config`):**
@@ -43,35 +58,35 @@ All notable changes to `node-red-contrib-anker-solix` are documented in this fil
 
 ---
 
-## - 2026-11-18
+## [1.0.x] - 2026-11-18
 - Fixed monthly and yearly `energy_analysis` statistics (`STAT_GES_MONAT_*` & `STAT_GES_JAHR_*`), mapped total solar/battery yields from solarbank statistics on Power Dock (`AE100`) setups, and added automatic fallback calculation for total home usage (`STAT_GES_*_HAUS`).
 - Added primary `AE100` Power Dock auto-detection via `combiner_box_info.combiner_box_list`.
 - Removed unsupported `SB1_TEMP`–`SB4_TEMP` keys for 120 clean, reliable data points and fixed documentation links.
 
-## - 2026-11-17
+## [1.0.x] - 2026-11-17
 - Extended `energy_analysis` statistics queries across `"solar_production"`, `"home_usage"`, and `"grid"` so Power Dock (`AE100`) and Smart Meter systems reliably report grid import, home usage, and grid export in `kWh`.
 - Fixed weekly statistics start date calculation (Monday of the current week), added raw `energy_analysis` JSON output on Output 2, and added `msg.topic = "get_stats"` on-demand refresh.
 
-## - 2026-11-15
+## [1.0.x] - 2026-11-15
 - Improved 24/7 MQTT wake-up (`cmd: 17`, `qos: 1`, official `clientId`, REST app pings `get_site_homepage` & `get_site_detail`, 90-second stall re-trigger, and per-device wake-up lock).
 - Added 300-second heartbeat in `emitSysVar` to prevent spline wave interpolation artifacts in CCU-Historian during constant phases.
 - Made `get_sites` non-blocking during active polling.
 
-## - - 2026-11-12
+## [1.0.x] - 2026-11-12
 - Refined session token caching across multiple node instances sharing one account and stabilized MQTT reconnect handling.
 
-## - 2026-11-10
+## [1.0.x] - 2026-11-10
 - Added explicit hardware support for **Anker Smart Meter 2nd Gen (1-phase, `AE1X0`)** and AC-coupled home storage systems (**Solarbank Max `AE111`**, **Solarbank Max AC `A17E2` / `B17E2`**).
 - Prioritized manually entered Wakeup Device SN/PN over automatic detection.
 - Increased login protection cooldown to 5 minutes on wrong password errors (`26108`) to prevent account lockouts (`10019`).
 - Added structured section headers (`_ANLEITUNG_1`, `_BEREICH_...`) to the default SysVars JSON template and example flow.
 - Introduced multilingual documentation (`README.md`, `README.en.md`, `README.de.md`).
 
-## - 2026-11-08
+## [1.0.x] - 2026-11-08
 - Implemented binary MQTT `pull_to_refresh` (`cmd: 17`) with randomized jitter and automatic battery protection for standalone solarbanks.
 
-## - 2026-11-05
+## [1.0.x] - 2026-11-05
 - Added `set_wakeup` runtime command (`true` / `false` / `"auto"`) and `get_sites` multi-site discovery.
 
-## - 2026-10-30
+## [1.0.0] - 2026-10-30
 - Initial public release of `node-red-contrib-anker-solix` for OpenCCU / HomeMatic, MQTT, InfluxDB, and KNX/Loxone.

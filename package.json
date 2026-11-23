@@ -1,22 +1,26 @@
 {
   "name": "node-red-contrib-anker-solix",
-  "version": "1.1.1",
-  "description": "Node-RED nodes to read real-time data, AC charging & energy statistics and control usage modes for Anker SOLIX Solar & Energy Storage Systems (Solarbank 1/2/3 Pro/4 E5000 Pro AE103, SOLIX E10, Power Dock AE100, Smart Meter) for OpenCCU, MQTT, Home Assistant, ioBroker, InfluxDB and KNX/Loxone.",
+  "version": "1.1.2",
+  "description": "Node-RED nodes to read real-time data, AC charging & energy statistics and control usage modes for Anker SOLIX Solar & Energy Storage Systems (Solarbank 1/2/3 Pro/4 E5000 Pro AE103, SOLIX E10, Power Dock AE100, Smart Meter) for OpenCCU, MQTT, Home Assistant and more.",
   "main": "anker-solix.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "build.bat"
   },
-  "engines": {
-    "node": ">=16.0.0"
-  },
-  "node-red": {
-    "version": ">=2.0.0",
-    "nodes": {
-      "anker-solix": "anker-solix.js",
-      "anker-solix-config": "anker-solix-config.js",
-      "anker-solix-control": "anker-solix-control.js"
-    }
-  },
+  "files": [
+    "anker-solix.js",
+    "anker-solix.html",
+    "anker-solix-config.js",
+    "anker-solix-config.html",
+    "anker-solix-control.js",
+    "anker-solix-control.html",
+    "examples/",
+    "images/",
+    "README.md",
+    "README.de.md",
+    "README.en.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "keywords": [
     "node-red",
     "anker",
@@ -46,12 +50,18 @@
     "loxone",
     "smart-home"
   ],
-  "repository": "github:j-c-wegner/node-red-contrib-anker-solix",
-  "bugs": "j-c-wegner/node-red-contrib-anker-solix",
-  "homepage": "github:j-c-wegner/node-red-contrib-anker-solix",
-  "author": "j-c-wegner",
+  "author": {
+    "name": "John"
+  },
   "license": "MIT",
   "dependencies": {
-    "mqtt": "^5.10.1"
+    "mqtt": "^5.10.0"
+  },
+  "node-red": {
+    "nodes": {
+      "anker-solix": "anker-solix.js",
+      "anker-solix-config": "anker-solix-config.js",
+      "anker-solix-control": "anker-solix-control.js"
+    }
   }
 }

@@ -23,6 +23,13 @@ module.exports = function (RED) {
             return new Array("SHEM3", "A17X7", "A17X8", "AE1R0", "AE1X0", "A17X6").indexOf(pn) !== -1;
         }
 
+        function clampPower(rawVal, maxCap) {
+            const num = Number(rawVal);
+            const safeNum = Number.isFinite(num) ? num : 0;
+            const upper = Number.isFinite(Number(maxCap)) && Number(maxCap) > 0 ? Number(maxCap) : 4800;
+            return Math.max(0, Math.min(upper, safeNum));
+        }
+
         async function resolveMasterDevice() {
             const siteListRes = await node.server.apiRequest("/power_service/v1/site/get_site_list", {});
             const sites = (siteListRes && siteListRes.data && siteListRes.data.site_list) || new Array();
@@ -72,6 +79,7 @@ module.exports = function (RED) {
 
             return { siteId, deviceSn: sn, devicePn: pn, family };
         }
+
         function updatePlanPower(planList, watt) {
             if (!Array.isArray(planList) || planList.length === 0) {
                 return new Array({ index: 1, week: new Array(1, 2, 3, 4, 5, 6, 0), ranges: new Array({ start_time: "00:00", end_time: "24:00", power: watt, charging_type: 0 }) });
@@ -118,6 +126,10 @@ module.exports = function (RED) {
                     val = msg.payload;
                 }
 
+                if (cmd === "set_output_power") {
+                    val = clampPower(val, 4800);
+                }
+
                 node.status({ fill: "blue", shape: "dot", text: "Sending " + cmd + "..." });
                 const { siteId, deviceSn, devicePn, family } = await resolveMasterDevice();
                 const paramType = (family === "POWERDOCK") ? "6" : "4";
@@ -132,7 +144,7 @@ module.exports = function (RED) {
                 }
 
                 if (family === "SB_GEN1" && cmd === "set_output_power") {
-                    const watt = Math.max(0, Math.min(800, Math.round(Number(val) || 0)));
+                    const watt = Math.round(clampPower(val, 800));
                     const v1Res = await node.server.apiRequest("/power_service/v1/site/set_home_load", {
                         site_id: siteId, device_sn: deviceSn, home_load_data: JSON.stringify({ power: watt })
                     });
@@ -168,7 +180,7 @@ module.exports = function (RED) {
                 } else if (cmd === "set_output_power") {
                     const maxLoad = Number(paramData.max_load) || 4800;
                     const step = Number(paramData.step) || 10;
-                    let watt = Math.max(0, Math.min(maxLoad, Number(val) || 0));
+                    let watt = clampPower(val, maxLoad);
                     watt = Math.round(watt / step) * step;
                     paramData.default_home_load = watt;
                     paramData.custom_rate_plan = updatePlanPower(paramData.custom_rate_plan, watt);

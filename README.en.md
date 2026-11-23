@@ -7,7 +7,7 @@
 ## Table of Contents
 
 1. [Installation](#installation)
-2. [Upgrade & Migration Guide (`v1.0.x` → `v1.1.0`)](#upgrade--migration-guide-v10x--v110)
+2. [Upgrade & Migration Guide (`v1.0.x` → `v1.1.x`)](#upgrade--migration-guide-v10x--v11x)
 3. [Basic Setup & Account Node (`anker-solix-config`)](#basic-setup--account-node-anker-solix-config)
 4. [Multi-Site Setup (`SITE_ID` & `get_sites`)](#multi-site-setup-site_id--get_sites)
 5. [Device Control Node (`anker-solix-control`)](#device-control-node-anker-solix-control)
@@ -23,9 +23,7 @@
 
 Install directly via the **Node-RED Palette Manager** by searching for `node-red-contrib-anker-solix` or via SSH / terminal inside your Node-RED data directory (e.g., `/usr/local/addons/redmatic/var` on OpenCCU / RedMatic):
 
-```bash
-npm install node-red-contrib-anker-solix
-```
+`npm install node-red-contrib-anker-solix`
 
 Import a ready-to-use example flow via **Node-RED Menu > Import > Examples > node-red-contrib-anker-solix**.
 
@@ -33,7 +31,7 @@ Import a ready-to-use example flow via **Node-RED Menu > Import > Examples > nod
 
 ---
 
-## Upgrade & Migration Guide (`v1.0.x` → `v1.1.0`)
+## Upgrade & Migration Guide (`v1.0.x` → `v1.1.x`)
 
 Starting with `v1.1.0`, cloud credentials have been moved into a dedicated **Account Configuration Node (`anker-solix-config`)** so that multiple data and control nodes can share a single account:
 
@@ -54,9 +52,10 @@ Starting with `v1.1.0`, cloud credentials have been moved into a dedicated **Acc
    * **Timezone:** Local timezone of your system (e.g., `Europe/Berlin` or `America/New_York`).
 3. **Single Site (`ms_type === 1`):** Leave `SITE_ID (opt.)` empty in the data node. The node automatically detects and caches your primary site.
 4. **Hardware Serial Numbers:** Leave `Wakeup SN/PN` and `Solarbank 1–4 SN` empty for automatic discovery, or enter specific serial numbers to override auto-detection.
-5. **Account Recommendation (Secondary vs. Primary Account):** Using a free, shared **secondary Anker account** is recommended for 24/7 read-only data monitoring (maximum security and clean separation). The **primary owner account** is only required for the **`Anker SOLIX Control`** node.
+5. **Account Recommendation (Secondary Account, Wakeup Account & Primary Account):** Using a shared **secondary Anker account** for **Account** is recommended for 24/7 read-only polling. You can optionally select your **primary owner account (`ms_type === 1`)** under **Wakeup Account** so MQTT wake-ups keep continuous 5-second updates running smoothly after app changes. The **primary owner account** is also required for the **`Anker SOLIX Control`** node.
 
 ![Node Configuration](images/node-config.png)
+
 ---
 
 ## Multi-Site Setup (`SITE_ID` & `get_sites`)
@@ -84,7 +83,7 @@ The **`Anker SOLIX Control`** node allows you to switch usage modes and output p
 | Command (`msg.topic`) | Values (`msg.payload`) | Description |
 | :--- | :--- | :--- |
 | **`set_usage_mode`** | `1`, `2`, `3`, or `7` | Switches the site's active usage mode:<br>• `1` = **Self-Consumption / Smart Meter**<br>• `2` = **Custom Mode / Schedule** (automatically creates a 24h fallback schedule `00:00–24:00` if none exists; configure custom time slots in the Anker app)<br>• `3` = **Smart Plug / Time-of-Use**<br>• `7` = **Smart Mode / AI EMS** |
-| **`set_output_power`** | `0` .. `4800` *(Watts)* | Sets AC output power in Watts (primarily for standalone solarbanks without Power Dock; automatically rounded to the device's `step` increment). |
+| **`set_output_power`** | `0` .. `4800` *(Watts)* | Sets AC output power in Watts (primarily for standalone solarbanks without Power Dock; clamped to `0..800 W` on Gen 1 or `0..max_load` / `4800 W` and rounded to the device's `step` increment). |
 | **`from_msg`** | `{ command, value }` | Dynamic control via JSON payload or via `msg.topic` + `msg.payload`. |
 | **`get_params`** | *(any)* | Reads current device parameters (`param_type` `6` or `4`) for diagnostics. |
 
@@ -96,6 +95,7 @@ Anker SOLIX solarbanks enter a **deep sleep mode** at night once the battery rea
 
 * **Systems with Power Dock (`AE100`), Anker Smart Meter (`A17X7`, `A17X8`, `AE1X0`, `AE1R0`, `SHEM3`), or AC Home Storage (`AE111`, `A17E1`, `A17E2`, `B17E2`):** These devices are permanently powered by AC mains. The node automatically uses them as the wake-up master (`cmd: 17` with randomized `3–4 min` jitter and automatic 90-second stall re-trigger) for uninterrupted 5-second real-time data while letting connected solarbanks rest safely.
 * **Standalone Solarbank Systems (without Power Dock / Anker Smart Meter):** The node automatically disables MQTT wake-up by default (`OK (Battery protection: wakeup off)`).
+* **Constellation Confirmation Tip:** If real-time readings fall back to 5-minute intervals despite active MQTT wake-up, open the Anker app once with your **primary owner account (`ms_type === 1`)** to confirm the device/system constellation.
 * **Smart Meter Offline Monitoring:** `SITE_SMARTMETER_ONLINE` reports `1` (online) or `0` (offline / 200W fallback active). In addition, **Output 3** emits a one-shot alert message (`msg.topic = "alarm/smartmeter_offline"` or `"alarm/smartmeter_online"`) whenever the connection state changes.
 * **Runtime Control Topics (Data Node):**
   * `msg.topic = "set_wakeup"`, `msg.payload = true` / `false` / `"auto"` (enable, disable, or return to automatic MQTT wake-up detection)
@@ -116,6 +116,7 @@ For every key mapped in the JSON configuration, **Output 1** emits a standard No
 | **MQTT Broker** *(Home Assistant, ioBroker)* | `"SITE_HOME_LOAD": "anker/solix/home_load"` | **`mqtt out`** (leave topic blank in MQTT node; uses `msg.topic` automatically) |
 | **InfluxDB / Grafana** | `"SITE_HOME_LOAD": "home_load_w"` | **`influxdb out`** (writes `msg.payload` under the field name in `msg.topic`) |
 | **KNX / Loxone** | `"SITE_HOME_LOAD": "1/2/10"` | **`knxUltimate`** or **`loxone-control-out`** |
+
 ---
 
 ## Copy-Pasteable JSON Template (126 Keys)
@@ -170,7 +171,6 @@ For every key mapped in the JSON configuration, **Output 1** emits a standard No
   "STAT_SB4_YEAR_SOLAR": "", "STAT_SB4_YEAR_CHARGE": "", "STAT_SB4_YEAR_DISCHARGE": ""
 }
 ```
-
 ---
 
 ## Complete Reference of All 126 Data Keys
