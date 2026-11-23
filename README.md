@@ -45,6 +45,7 @@ Node-RED nodes to read real-time data (`W`, `%`, Smart Meter status), AC chargin
 * **Troubleshooting Tip (Power Dock Constellation):** If real-time values fall back to 5-minute intervals despite active MQTT wake-up, open the Anker app once with the **primary owner account (`ms_type === 1`)** to confirm the device constellation/setup in the app.
 * **Migration Note (`v1.0.x` -> `v1.1.x`):** After updating from `v1.0.x`, open your existing `Anker SOLIX` node once, click the pencil icon next to **Account**, and enter your **Email**, **Password**, and **Region** in the new `anker-solix-config` node. All existing SysVars mappings, `SITE_ID`, serial numbers, and wires remain intact.
 
+📋 Full release history: [CHANGELOG.md](CHANGELOG.md)
 ---
 
 ### Planned Roadmap (Unbinding / Subject to Change)
